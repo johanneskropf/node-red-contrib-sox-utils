@@ -1,0 +1,80 @@
+<script type="text/javascript">
+    RED.nodes.registerType('sox-record',{
+        category: 'input',
+        color: '#c28285',
+        defaults: {
+            name: {value:""},
+            inputSource: {value:"alsa default", required:true},
+            byteOrder: {value:"-L", required:true},
+            encoding: {value:"signed-integer", required:true},
+            channels: {value:1, required:true},
+            rate: {value:16000, required:true},
+            bits: {value:16, required:true},
+            outputFormat: {value:"stream", required:true},
+            debugOutput: {value:false, required:true}
+        },
+        inputs:1,
+        outputs:2,
+        icon: "font-awesome/fa-microphone",
+        label: function() {
+            return this.name||"sox-record";
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="sox-record">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <h4>Source</h4>
+    <div class="form-row">
+        <label for="node-input-inputSource"><i class="icon-tag"></i>input source</label>
+        <input type="text" id="node-input-inputSource" value="alsa default" />
+    </div>
+    <h4>Settings</h4>
+    <div class="form-row">
+        <label for="node-input-byteOrder"></i>byte order</label>
+        <select id="node-input-byteOrder">
+            <option value="-L">little endian</option> 
+            <option value="-B">big endian</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-encoding"></i>encoding</label>
+        <select id="node-input-encoding">
+            <option value="signed-integer">signed-integer</option> 
+            <option value="unsigned-integer">unsigned-integer</option>
+            <option value="floating-point">floating-point</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-channels"><i class="icon-tag"></i>channels</label>
+        <input type="number" id="node-input-channels" value="1" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-rate"><i class="icon-tag"></i>rate</label>
+        <input type="number" id="node-input-rate" value="16000" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-bits"><i class="icon-tag"></i>bit-depth</label>
+        <input type="number" id="node-input-bits" value="16" />
+    </div>
+    <h4>Output</h4>
+    <div class="form-row">
+        <label for="node-input-outputFormat"></i>output format</label>
+        <select id="node-input-outputFormat">
+            <option value="stream">a stream of buffers while recording</option> 
+            <option value="once">a single buffer when recording ends</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-debugOutput"></i>debug</label>
+        <input type="checkbox" id="node-input-debugOutput" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
+        <label for="node-input-debugOutput" style="width: 70%;">detailed debug output</label>
+    </div>   
+</script>
+
+<script type="text/html" data-help-name="sox-record">
+    <p>A simple wrapper node around the record functionality of the sox commandline tool</p>
+</script>
