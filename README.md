@@ -4,7 +4,11 @@
 !!!this is very much wip, so use with care!!!
 ```
 
-a simple node-red wrapper around the record functionality of the sox commandline utility
+a simple node-red wrapper around the record functionality of the [sox commandline utility](http://sox.sourceforge.net/)
+
+# Prerequisites
+
+This node is made to work with the [sox commandline utility](http://sox.sourceforge.net/) on linux. To use it you will have to install sox. This can be done with the command `sudo apt-get install sox` from the commandline of the machine that node-red is running on.
 
 # Basic usage
 
