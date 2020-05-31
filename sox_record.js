@@ -21,6 +21,9 @@ module.exports = function(RED) {
         this.bits = config.bits;
         this.durationType = config.durationType;
         this.durationLength = config.durationLength;
+        this.silenceDetection = config.silenceDetection;
+        this.silenceThreshold = config.silenceThreshold;
+        this.silenceDuration = config.silenceDuration;
         this.outputFormat = config.outputFormat;
         this.debugOutput = config.debugOutput;
         var node = this;
@@ -109,6 +112,9 @@ module.exports = function(RED) {
         node.argArr1 = node.argArr0.concat(node.inputSourceArr);
         node.argArr2 = [node.byteOrder,"-e",node.encoding,"-c",node.channels,"-r",node.rate,"-b",node.bits,"-t","raw","-"];
         node.argArr = node.argArr1.concat(node.argArr2);
+        if (node.silenceDetection == "something") {
+            node.argArr.push("silence","-l","0","1",node.silenceDuration,node.silenceThreshold + "%");
+        }
         if (node.durationType == "limited") {
             node.argArr.push("trim","0",node.durationLength);
         }

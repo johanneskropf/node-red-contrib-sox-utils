@@ -12,6 +12,9 @@
             bits: {value:16, required:true},
             durationType: {value:"forever", required:true},
             durationLength: {value:0, required:true},
+            silenceDetection: {value:"nothing", required:true},
+            silenceDuration: {value:"2.0", required:true},
+            silenceThreshold: {value:"2.0", required:true},
             outputFormat: {value:"stream", required:true},
             debugOutput: {value:false, required:true}
         },
@@ -23,12 +26,24 @@
         },
         oneditprepare: function() {
             var node = this;
+            
             $("#node-input-durationType").on("change", function(){
                 let durVar = $("#node-input-durationType").val();
                 if(durVar == "limited"){
                     $("#durationLengthWrapper").show();
                 } else {
                     $("#durationLengthWrapper").hide();
+                }
+            });
+            
+            $("#node-input-silenceDetection").on("change", function(){
+                let silVar = $("#node-input-silenceDetection").val();
+                if(silVar == "something"){
+                    $("#silenceThresholdWrapper").show();
+                    $("#silenceDurationWrapper").show();
+                } else {
+                    $("#silenceThresholdWrapper").hide();
+                    $("#silenceDurationWrapper").hide();
                 }
             });
         }
@@ -73,6 +88,7 @@
         <label for="node-input-bits"><i class="icon-tag"></i>bit-depth</label>
         <input type="number" id="node-input-bits" value="16" />
     </div>
+    <h4>Recording Duration</h4>
     <div class="form-row">
         <label for="node-input-durationType"><i class="icon-tag"></i>record time</label>
         <select id="node-input-durationType">
@@ -83,6 +99,21 @@
     <div id="durationLengthWrapper" class="form-row">
         <label for="node-input-durationLength"><i class="icon-tag"></i>seconds</label>
         <input type="number" id="node-input-durationLength" value="0" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-silenceDetection"><i class="icon-tag"></i>on silence</label>
+        <select id="node-input-silenceDetection">
+            <option value="nothing">do nothing</option> 
+            <option value="something">stop recording</option>
+        </select>
+    </div>
+    <div id="silenceDurationWrapper" class="form-row">
+        <label for="node-input-silenceDuration"><i class="icon-tag"></i>below duration in s</label>
+        <input type="text" id="node-input-silenceDuration" value="2.0" />
+    </div>
+    <div id="silenceThresholdWrapper" class="form-row">
+        <label for="node-input-silenceThreshold"><i class="icon-tag"></i>below threshold in %</label>
+        <input type="text" id="node-input-silenceThreshold" value="2.0" />
     </div>
     <h4>Output</h4>
     <div class="form-row">
