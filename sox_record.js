@@ -19,6 +19,8 @@ module.exports = function(RED) {
         this.channels = config.channels;
         this.rate = config.rate;
         this.bits = config.bits;
+        this.durationType = config.durationType;
+        this.durationLength = config.durationLength;
         this.outputFormat = config.outputFormat;
         this.debugOutput = config.debugOutput;
         var node = this;
@@ -107,6 +109,9 @@ module.exports = function(RED) {
         node.argArr1 = node.argArr0.concat(node.inputSourceArr);
         node.argArr2 = [node.byteOrder,"-e",node.encoding,"-c",node.channels,"-r",node.rate,"-b",node.bits,"-t","raw","-"];
         node.argArr = node.argArr1.concat(node.argArr2);
+        if (node.durationType == "limited") {
+            node.argArr.push("trim","0",node.durationLength);
+        }
         
         node.on('input', function(msg) {
             
