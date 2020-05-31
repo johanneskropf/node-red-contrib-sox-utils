@@ -11,7 +11,7 @@ a simple node-red wrapper around the record functionality of the [sox commandlin
 This node is made to work with the [sox commandline utility](http://sox.sourceforge.net/) on linux. To use it you will have to install sox. This can be done with the command `sudo apt-get install sox` from the commandline of the machine that node-red is running on.
 Once you have sox installed you can install the node by running the following npm command in your Node-RED user directory (typically ~/.node-red):
 ```
-npm install bartbutenaers/node-red-contrib-voice2json
+npm install johanneskropf/node-red-contrib-sox-record
 ```
 Now restart nodered and it should appear in the input category of your palette.
 
