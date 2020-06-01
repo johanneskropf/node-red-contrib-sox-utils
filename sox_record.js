@@ -24,9 +24,6 @@ module.exports = function(RED) {
         this.outputBufferArr = [];
         this.outputBuffer = false;
         this.argArr = [];
-        this.argArr0 = [];
-        this.argArr1 = [];
-        this.argArr2 = [];
         this.inputSource = config.inputSource;
         this.inputSourceArr = [];
         this.byteOrder = config.byteOrder;
@@ -82,8 +79,7 @@ module.exports = function(RED) {
             node_status2("recording","blue","dot",1);
             
             node.soxRecord.stderr.on('data', (data)=>{
-                //node.error("stderr: " + data.toString());
-                //node_status("error","red","dot",1500);
+            
                 msg2.payload = data.toString();
                 node.send([null,msg2]);
                 
@@ -119,14 +115,13 @@ module.exports = function(RED) {
         }
         
         if (node.debugOutput) {
-            node.argArr0 = ["-t"];
+            node.argArr.push("-t");
         } else {
-            node.argArr0 = ["-q","-t"];
+            node.argArr.push("-q","-t");
         }    
         node.inputSourceArr = node.inputSource.split(" ");
-        node.argArr1 = node.argArr0.concat(node.inputSourceArr);
-        node.argArr2 = [node.byteOrder,"-e",node.encoding,"-c",node.channels,"-r",node.rate,"-b",node.bits,"-t","raw","-"];
-        node.argArr = node.argArr1.concat(node.argArr2);
+        node.argArr = node.argArr.concat(node.inputSourceArr);
+        node.argArr.push(node.byteOrder,"-e",node.encoding,"-c",node.channels,"-r",node.rate,"-b",node.bits,"-t","raw","-");
         if (node.silenceDetection == "something") {
             node.argArr.push("silence","-l","0","1",node.silenceDuration,node.silenceThreshold + "%");
         }
@@ -165,18 +160,18 @@ module.exports = function(RED) {
             if(node.statusTimer !== false){
                clearTimeout(node.statusTimer);
                node.statusTimer = false;
-               node.status({});
             }
             
             if(node.statusTimer2 !== false){
                clearTimeout(node.statusTimer2);
                node.statusTimer2 = false;
-               node.status({});
             }
             
             if(node.soxRecord) {
                 node.soxRecord.kill();
             }
+            
+            node.status({});
         });
         
     }
