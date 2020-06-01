@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-sox-record",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "a node-red wrapper for the sox commandline record functionality",
   "author": "Johannes Kropf",
   "license": "Apache-2.0",
