@@ -40,27 +40,33 @@ module.exports = function(RED) {
         this.debugOutput = config.debugOutput;
         var node = this;
         
-        function node_status(text,color,shape,time){
-            node.status({fill:color,shape:shape,text:text});
-            if(node.statusTimer !== false){
+        function node_status(state1 = [], timeout = 0, state2 = []){
+            
+            if (state1.length !== 0) {
+                node.status({fill:state1[1],shape:state1[2],text:state1[0]});
+            } else {
+                node.status({});
+            }
+            
+            if (node.statusTimer !== false) {
                 clearTimeout(node.statusTimer);
                 node.statusTimer = false;
             }
-            node.statusTimer = setTimeout(() => {
-                node.status({});
-                node.statusTimer = false;
-            },time);
-        }
-        
-        function node_status2(text,color,shape,time){
-            if(node.statusTimer2 !== false){
-                clearTimeout(node.statusTimer2);
-                node.statusTimer2 = false;
+            
+            if (timeout !== 0) {
+                node.statusTimer = setTimeout(() => {
+                
+                    if (state2.length !== 0) {
+                        node.status({fill:state2[1],shape:state2[2],text:state2[0]});
+                    } else {
+                        node.status({});
+                    }
+                    
+                    node.statusTimer = false;
+                    
+                },timeout);
             }
-            node.statusTimer2 = setTimeout(() => {
-                node.status({fill:color,shape:shape,text:text});
-                node.statusTimer2 = false;
-            },time);
+            
         }
         
         function spawnRecord(){
@@ -71,12 +77,12 @@ module.exports = function(RED) {
                 node.soxRecord = spawn("sox",node.argArr);
             } 
             catch (error) {
-                node_status2("error starting record command","red","ring",1);
+                node_status(["error starting record command","red","ring"],1500);
                 node.error(error);
                 return;
             }
             
-            node_status2("recording","blue","dot",1);
+            node_status(["recording","blue","dot"]);
             
             node.soxRecord.stderr.on('data', (data)=>{
             
@@ -94,7 +100,7 @@ module.exports = function(RED) {
                     node.send([msg1,null]);
                 }
                 node.send([null,{payload:"complete"}]);
-                node_status("finished","green","dot",1500);
+                node_status(["finished","green","dot"],1500);
                 delete node.soxRecord;
                 return;
                 
@@ -157,21 +163,13 @@ module.exports = function(RED) {
         });
         
         node.on("close",function() {
-            if(node.statusTimer !== false){
-               clearTimeout(node.statusTimer);
-               node.statusTimer = false;
-            }
-            
-            if(node.statusTimer2 !== false){
-               clearTimeout(node.statusTimer2);
-               node.statusTimer2 = false;
-            }
+        
+            node_status();
             
             if(node.soxRecord) {
                 node.soxRecord.kill();
             }
             
-            node.status({});
         });
         
     }
