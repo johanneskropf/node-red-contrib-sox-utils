@@ -22,6 +22,10 @@
             channels: {value:1, required:true},
             rate: {value:16000, required:true},
             bits: {value:16, required:true},
+			gain: {value:"0", required:true},
+			highLowPass: {value:"n", required:true},
+			highpass: {value:200, required:true},
+			lowpass: {value:8000, required:true},
             durationType: {value:"forever", required:true},
             durationLength: {value:0, required:true},
             silenceDetection: {value:"nothing", required:true},
@@ -58,15 +62,29 @@
                     $("#silenceDurationWrapper").hide();
                 }
             });
+			
+			$("#node-input-highLowPass").on("change", function(){
+                let passVar = $("#node-input-highLowPass").val();
+                if(passVar == "n"){
+                    $("#highpassWrapper").hide();
+                    $("#lowpassWrapper").hide();
+                } else if (passVar == "h") {
+                    $("#highpassWrapper").show();
+                    $("#lowpassWrapper").hide();
+                } else if (passVar == "l") {
+                    $("#highpassWrapper").hide();
+                    $("#lowpassWrapper").show();
+                } else if (passVar == "b") {
+                    $("#highpassWrapper").show();
+                    $("#lowpassWrapper").show();
+                }
+            });
+        
         }
     });
 </script>
 
 <script type="text/html" data-template-name="sox-record">
-    <div class="form-row">
-        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
-        <input type="text" id="node-input-name" placeholder="Name">
-    </div>
     <h4>Source</h4>
     <div class="form-row">
         <label for="node-input-inputSource"><i class="icon-tag"></i>input source</label>
@@ -99,6 +117,27 @@
     <div class="form-row">
         <label for="node-input-bits"><i class="icon-tag"></i>bit-depth</label>
         <input type="number" id="node-input-bits" value="16" />
+    </div>
+	<div class="form-row">
+        <label for="node-input-gain"><i class="icon-tag"></i>gain in dB</label>
+        <input type="text" id="node-input-gain" value="0" />
+    </div>
+	<div class="form-row">
+        <label for="node-input-highLowPass"></i>add high-/lowpass</label>
+        <select id="node-input-highLowPass">
+			<option value="n">none</option>
+            <option value="h">add highpass filter</option> 
+            <option value="l">add lowpass filter</option>
+			<option value="b">add high- & lowpass filter</option>
+        </select>
+    </div>
+	<div id="highpassWrapper" class="form-row">
+        <label for="node-input-highpass"><i class="icon-tag"></i>highpass freq.</label>
+        <input type="number" id="node-input-highpass" value="200" />
+    </div>
+	<div id="lowpassWrapper" class="form-row">
+        <label for="node-input-lowpass"><i class="icon-tag"></i>lowpass freq.</label>
+        <input type="number" id="node-input-lowpass" value="8000" />
     </div>
     <h4>Recording Duration</h4>
     <div class="form-row">
@@ -139,7 +178,12 @@
         <label for="node-input-debugOutput"></i>debug</label>
         <input type="checkbox" id="node-input-debugOutput" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
         <label for="node-input-debugOutput" style="width: 70%;">detailed debug info to 2nd output</label>
-    </div>   
+    </div>
+	<h4>Name</h4>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>	
 </script>
 
 <script type="text/html" data-help-name="sox-record">
