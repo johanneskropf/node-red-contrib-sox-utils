@@ -42,7 +42,7 @@ You can stop playback at anytime with a `msg.payload` of `stop`.
 *Note: If you want to play mp3's with sox you will have to install a handler for this:*`sudo apt-get install libsox-fmt-mp3`
 
 # Todo:
-- [ ] add source dynamically populated source select to record
+- [ ] add dynamically populated source select dropdown to record
 - [ ] add gain to play
 - [ ] add buffer support to play
 - [ ] add debug level tick box to play
