@@ -1,10 +1,10 @@
-# node-red-contrib-sox-record
+# node-red-contrib-sox-utils
 
 ```
 !!!this is very much wip, so use with care!!!
 ```
 
-a simple node-red wrapper around the record functionality of the [sox commandline utility](http://sox.sourceforge.net/)
+a simple node-red wrapper around some of the functionality of the [sox commandline utility](http://sox.sourceforge.net/) on linux
 
 # Prerequisites
 
@@ -16,6 +16,8 @@ npm install johanneskropf/node-red-contrib-sox-record
 Now restart nodered and it should appear in the input category of your palette.
 
 # Basic usage
+
+## Record Node
 
 The node starts recording with the specified settings when it receives a `msg.payload` with the content of `start`.
 To stop recording at any time send a `msg.payload` of `stop`.
@@ -32,3 +34,7 @@ The node also supports the sox silence detection functionality. You can set the 
 You can combine both silence detection and max record duration or use either independent of each other.
 
 If you want to save the recorded audio as a wav file you will need to add wav headers to the audio buffer. You can use [node-red-contrib-wav](https://github.com/bartbutenaers/node-red-contrib-wav) for this. Just set the sox-record node to output a single buffer when finished and connect the first output to the wav node. Set the wav node to add headers with the same settings you set the record node to. If you want to save the wav to the file system you can easily use the file node to write the resulting data buffer straight to a wav file.
+
+## Play Node
+
+The play node will play an audio file which path was send as a `msg.payload` to the node. It will try to play the audio on the selected output from the nodes menu. It sends playback progress to the output and a `msg.payload` of `complete
