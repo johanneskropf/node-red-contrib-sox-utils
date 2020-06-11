@@ -1,0 +1,58 @@
+<!--
+  Copyright 2020, Johannes Kropf
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<script type="text/javascript">
+    RED.nodes.registerType('sox-play',{
+        category: 'output',
+        color: '#c28285',
+        defaults: {
+            name: {value:""},
+            outputDevice: {value:"default", required:true},
+            debugOutput: {value:false, required:true}
+        },
+        inputs:1,
+        outputs:1,
+        icon: "font-awesome/fa-volume-up",
+        label: function() {
+            return this.name||"sox-play";
+        },
+        oneditprepare: function() {
+            var node = this;
+            $.getJSON('soxPlay/devices',function(data) {
+                console.log(data)
+                data.forEach(device => {
+                    $('#node-input-outputDevice').append(`<option value="${device.number}">${device.name}</option>`);
+                });
+                $('#node-input-outputDevice').val(node.outputDevice);
+            });
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="sox-play">
+    <h4>Output Device</h4>
+    <div class="form-row">
+        <label for="node-input-outputDevice"></i>output device</label>
+        <select id="node-input-outputDevice">
+            <option value="default">default device</option> 
+        </select>
+    </div>
+    <h4>Name</h4>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="sox-play">
+    <p></p>
+</script>
