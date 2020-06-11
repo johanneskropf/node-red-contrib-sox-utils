@@ -37,4 +37,6 @@ If you want to save the recorded audio as a wav file you will need to add wav he
 
 ## Play Node
 
-The play node will play an audio file which path was send as a `msg.payload` to the node. It will try to play the audio on the selected output from the nodes menu. It sends playback progress to the output and a `msg.payload` of `complete
+The play node will play an audio file which path was send as a `msg.payload` to the node. It will try to play the audio on the selected output from the nodes menu. It sends playback progress to the output and a `msg.payload` of `complete` once finished.
+You can stop playback at anytime with a `msg.payload` of `stop`.
+*if you want to play mp3's with sox you will have to install a handler for this:*udo apt-get install libsox-fmt-mp3`
