@@ -13,7 +13,7 @@ Once you have sox installed you can install the node by running the following np
 ```
 npm install johanneskropf/node-red-contrib-sox-record
 ```
-Now restart nodered and it should appear in the input category of your palette.
+Now restart nodered and it should appear as its own category called Sox Utils in your palette on the left.
 
 # Basic usage
 
