@@ -24,8 +24,12 @@ module.exports = function(RED) {
         this.statusTimer2 = false;
         this.outputDeviceRaw = config.outputDevice;
         this.outputDevice = "hw:";
+        this.gain = config.gain;
         this.debugOutput = config.debugOutput;
         this.argArr = [];
+        this.startNew = config.startNew;
+        this.killNew = false;
+        this.newPayload = "";
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -81,6 +85,20 @@ module.exports = function(RED) {
                 node.send({payload:"complete"});
                 node_status(["finished","green","dot"],1500);
                 delete node.soxPlay;
+                if (!node.killNew) {
+                    node.argArr = [];
+                    if (!node.debugOutput) { node.argArr.push('-q'); }
+                } else {
+                    node.killNew = false;
+                    spawnPlay();
+                    if (Buffer.isBuffer(node.newPayload)) {
+                        try {
+                            node.soxPlay.stdin.write(node.newPayload);
+                        } catch (error) {
+                            node.error('failed to write buffer to stdin: ' + error)
+                        }
+                    }
+                }
                 return;
                 
             });
@@ -100,16 +118,38 @@ module.exports = function(RED) {
             node.outputDevice += node.outputDeviceRaw.toString();
         }
         
+        if (!node.debugOutput) { node.argArr.push('-q'); }
+        
         node.on('input', function(msg) {
             if (msg.payload === 'stop' && node.soxPlay) {
                 node.soxPlay.kill();
             } else if (msg.payload === 'stop' && !node.soxPlay) {
                 node.warn('not playing');
-            } else if (!node.soxPlay) {
-                node.argArr = [msg.payload.trim(),'-t','alsa',node.outputDevice];
+            } else if (!node.soxPlay && typeof msg.payload === 'string') {
+                node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
                 spawnPlay();
+            } else if (!node.soxPlay && Buffer.isBuffer(msg.payload)) {
+                node.argArr.push('-','-t','alsa',node.outputDevice,'gain',node.gain);
+                spawnPlay();
+                try {
+                    node.soxPlay.stdin.write(msg.payload);
+                } catch (error) {
+                    node.error('failed to write buffer to stdin: ' + error)
+                }
+            } else if (node.soxPlay && node.startNew === 'start') {
+                node.argArr = [];
+                if (!node.debugOutput) { node.argArr.push('-q'); }
+                if (typeof msg.payload === 'string') {
+                    node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
+                } else if (Buffer.isBuffer(msg.payload)) {
+                    node.argArr.push('-','-t','alsa',node.outputDevice,'gain',node.gain);
+                }
+                node.newPayload = msg.payload;
+                node.killNew = true;
+                node.soxPlay.kill();
+                
             } else {
-                node.warn('already playing');
+                node.warn('ignoring input as there is already a playback in progress');
             }
             
         });
@@ -120,6 +160,7 @@ module.exports = function(RED) {
             
             if(node.soxPlay) {
                 node.soxPlay.kill();
+                
             }
             
         });

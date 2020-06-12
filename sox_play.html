@@ -12,11 +12,13 @@
 -->
 <script type="text/javascript">
     RED.nodes.registerType('sox-play',{
-        category: 'output',
+        category: 'Sox Utils',
         color: '#c28285',
         defaults: {
             name: {value:""},
-            outputDevice: {value:"default", required:true},
+            outputDevice: {value:'default', required:true},
+            gain: {value:'0', required:true},
+            startNew: {value:'skip', required:true},
             debugOutput: {value:false, required:true}
         },
         inputs:1,
@@ -39,12 +41,28 @@
 </script>
 
 <script type="text/html" data-template-name="sox-play">
-    <h4>Output Device</h4>
+    <h4>Settings</h4>
     <div class="form-row">
         <label for="node-input-outputDevice"></i>output device</label>
         <select id="node-input-outputDevice">
             <option value="default">default device</option> 
         </select>
+    </div>
+    <div class="form-row">
+	    <label for="node-input-gain"><i class="icon-tag"></i>gain in dB</label>
+	    <input type="text" id="node-input-gain" value="0" />
+	</div>
+    <div class="form-row">
+        <label for="node-input-startNew"></i>on new input while playing</label>
+        <select id="node-input-startNew">
+            <option value="skip">ignore new input and keep current playback</option>
+            <option value="start">replace current playback with new input</option> 
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-debugOutput"></i>debug</label>
+        <input type="checkbox" id="node-input-debugOutput" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
+        <label for="node-input-debugOutput" style="width: 70%;">detailed debug and playpack info</label>
     </div>
     <h4>Name</h4>
     <div class="form-row">
