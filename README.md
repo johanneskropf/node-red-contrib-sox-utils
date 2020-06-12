@@ -37,14 +37,14 @@ If you want to save the recorded audio as a wav file you will need to add wav he
 
 ## Play Node
 
-The play node will play an audio file which path was send as a `msg.payload` to the node. It will try to play the audio on the selected output from the nodes menu. It sends playback progress to the output and a `msg.payload` of `complete` once finished.
+The play node will play an audio file (*Note: If you want to play mp3's with sox you will have to install a handler for this:*`sudo apt-get install libsox-fmt-mp3`) which was send to the node as either a string containing a path in the `msg.payload` or as a single buffer containing the data in the `msg.payload`. It will try to play the audio on the selected output from the nodes menu. If you select the detailed info option it will send detailed playback progress and information to the output. When finished it will always send a `msg.payload` of `complete`.
 You can stop playback at anytime with a `msg.payload` of `stop`.
-*Note: If you want to play mp3's with sox you will have to install a handler for this:*`sudo apt-get install libsox-fmt-mp3`
+The node can behave in two ways when a new input arrives while a playback is in progress. The behavior can be set in the nodes options. You can choose if it should either ignore the new input or stop the current playback and replace it with the new input.
 
 # Todo:
 - [ ] add dynamically populated source select dropdown to record
-- [ ] add gain to play
-- [ ] add buffer support to play
-- [ ] add debug level tick box to play
+- [x] add gain to play
+- [x] add buffer support to play
+- [x] add debug level tick box to play
 - [ ] *add effect node*
 - [ ] *move some effects from record to effect*
