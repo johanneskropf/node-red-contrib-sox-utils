@@ -4,7 +4,7 @@
 !!!this is very much wip, so use with care!!!
 ```
 
-a simple node-red wrapper around some of the functionality of the [sox commandline utility](http://sox.sourceforge.net/) on linux
+a simple node-red wrapper around some of the record and play functionality of the [sox commandline utility](http://sox.sourceforge.net/) on linux
 
 # Prerequisites
 
