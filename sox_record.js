@@ -31,10 +31,10 @@ module.exports = function(RED) {
         this.channels = config.channels;
         this.rate = config.rate;
         this.bits = config.bits;
-		this.gain = config.gain;
-		this.highLowPass = config.highLowPass;
-		this.highpass = config.highpass;
-		this.lowpass = config.lowpass;
+        this.gain = config.gain;
+        this.highLowPass = config.highLowPass;
+        this.highpass = config.highpass;
+        this.lowpass = config.lowpass;
         this.durationType = config.durationType;
         this.durationLength = config.durationLength;
         this.silenceDetection = config.silenceDetection;
@@ -77,7 +77,7 @@ module.exports = function(RED) {
         
             let msg1 = {};
             let msg2 = {};
-			
+            
             try{
                 node.soxRecord = spawn("sox",node.argArr);
             } 
@@ -125,6 +125,8 @@ module.exports = function(RED) {
         
         }
         
+        node_status();
+        
         if (node.debugOutput) {
             node.argArr.push("-t");
         } else {
@@ -139,20 +141,20 @@ module.exports = function(RED) {
         if (node.durationType == "limited") {
             node.argArr.push("trim","0",node.durationLength);
         }
-		node.argArr.push("gain",node.gain);
-		switch(node.highLowPass){
-			case "n":
-			    break;
-		    case "h":
-			    node.argArr.push("highpass",node.highpass);
-				break;
-		    case "l":
-			    node.argArr.push("lowpass",node.lowpass);
-				break;
-			case "b":
-			    node.argArr.push("highpass",node.highpass,"lowpass",node.lowpass);
-			    break;
-		}
+        node.argArr.push("gain",node.gain);
+        switch(node.highLowPass){
+            case "n":
+                break;
+            case "h":
+                node.argArr.push("highpass",node.highpass);
+                break;
+            case "l":
+                node.argArr.push("lowpass",node.lowpass);
+                break;
+            case "b":
+                node.argArr.push("highpass",node.highpass,"lowpass",node.lowpass);
+                break;
+        }
         
         node.on('input', function(msg) {
             

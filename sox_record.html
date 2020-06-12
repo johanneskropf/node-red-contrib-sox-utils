@@ -12,7 +12,7 @@
 -->
 <script type="text/javascript">
     RED.nodes.registerType('sox-record',{
-        category: 'input',
+        category: 'Sox Utils',
         color: '#c28285',
         defaults: {
             name: {value:""},
@@ -22,12 +22,12 @@
             channels: {value:1, required:true},
             rate: {value:16000, required:true},
             bits: {value:16, required:true},
-			advancedSettings: {value:false, required:true},
-			gain: {value:"0", required:true},
-			highLowPass: {value:"n", required:true},
-			highpass: {value:200, required:true},
-			lowpass: {value:8000, required:true},
-			showDuration: {value:false, required:true},
+            advancedSettings: {value:false, required:true},
+            gain: {value:"0", required:true},
+            highLowPass: {value:"n", required:true},
+            highpass: {value:200, required:true},
+            lowpass: {value:8000, required:true},
+            showDuration: {value:false, required:true},
             durationType: {value:"forever", required:true},
             durationLength: {value:0, required:true},
             silenceDetection: {value:"nothing", required:true},
@@ -64,8 +64,8 @@
                     $("#silenceDurationWrapper").hide();
                 }
             });
-			
-			$("#node-input-highLowPass").on("change", function(){
+
+            $("#node-input-highLowPass").on("change", function(){
                 let passVar = $("#node-input-highLowPass").val();
                 if(passVar == "n"){
                     $("#highpassWrapper").hide();
@@ -81,16 +81,16 @@
                     $("#lowpassWrapper").show();
                 }
             });
-			
-			$("#node-input-showDuration").on("change", function(){
+
+            $("#node-input-showDuration").on("change", function(){
                 if(!$("#node-input-showDuration").prop("checked")){
                     $("#durationOptionWrapper").hide();
                 } else {
                     $("#durationOptionWrapper").show();
                 }
             });
-			
-			$("#node-input-advancedSettings").on("change", function(){
+
+            $("#node-input-advancedSettings").on("change", function(){
                 if(!$("#node-input-advancedSettings").prop("checked")){
                     $("#advancedSettingsWrapper").hide();
                 } else {
@@ -136,68 +136,68 @@
         <label for="node-input-bits"><i class="icon-tag"></i>bit-depth</label>
         <input type="number" id="node-input-bits" value="16" />
     </div>
-	<div class="form-row">
-		<label for="node-input-dvancedSettings">more</i></label>
+    <div class="form-row">
+        <label for="node-input-dvancedSettings">more</i></label>
         <input type="checkbox" id="node-input-advancedSettings" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
         <label for="node-input-advancedSettings" style="width: 70%;">show advanced settings</label>
     </div>
-	<div id="advancedSettingsWrapper">
-		<div class="form-row">
-	        <label for="node-input-gain"><i class="icon-tag"></i>gain in dB</label>
-	        <input type="text" id="node-input-gain" value="0" />
-	    </div>
-		<div class="form-row">
-	        <label for="node-input-highLowPass"></i>add high-/lowpass</label>
-	        <select id="node-input-highLowPass">
-				<option value="n">none</option>
-	            <option value="h">add highpass filter</option> 
-	            <option value="l">add lowpass filter</option>
-				<option value="b">add high & lowpass filter</option>
-	        </select>
-	    </div>
-		<div id="highpassWrapper" class="form-row">
-	        <label for="node-input-highpass"><i class="icon-tag"></i>highpass freq.</label>
-	        <input type="number" id="node-input-highpass" value="200" />
-	    </div>
-		<div id="lowpassWrapper" class="form-row">
-	        <label for="node-input-lowpass"><i class="icon-tag"></i>lowpass freq.</label>
-	        <input type="number" id="node-input-lowpass" value="8000" />
-	    </div>
-	</div>	
+    <div id="advancedSettingsWrapper">
+        <div class="form-row">
+            <label for="node-input-gain"><i class="icon-tag"></i>gain in dB</label>
+            <input type="text" id="node-input-gain" value="0" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-highLowPass"></i>add high-/lowpass</label>
+            <select id="node-input-highLowPass">
+                <option value="n">none</option>
+                <option value="h">add highpass filter</option> 
+                <option value="l">add lowpass filter</option>
+                <option value="b">add high & lowpass filter</option>
+            </select>
+        </div>
+        <div id="highpassWrapper" class="form-row">
+            <label for="node-input-highpass"><i class="icon-tag"></i>highpass freq.</label>
+            <input type="number" id="node-input-highpass" value="200" />
+        </div>
+        <div id="lowpassWrapper" class="form-row">
+            <label for="node-input-lowpass"><i class="icon-tag"></i>lowpass freq.</label>
+            <input type="number" id="node-input-lowpass" value="8000" />
+        </div>
+    </div>
     <h4>Recording Duration</h4>
-	<div class="form-row">
-		<label for="node-input-showDuration">duration</i></label>
+    <div class="form-row">
+        <label for="node-input-showDuration">duration</i></label>
         <input type="checkbox" id="node-input-showDuration" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
         <label for="node-input-showDuration" style="width: 70%;">show options</label>
     </div>
-	<div id="durationOptionWrapper">
-	    <div class="form-row">
-	        <label for="node-input-durationType"><i class="icon-tag"></i>record time</label>
-	        <select id="node-input-durationType">
-	            <option value="forever">record until a stop msg is send</option> 
-	            <option value="limited">record for specified amount of seconds</option>
-	        </select>
-	    </div>
-	    <div id="durationLengthWrapper" class="form-row">
-	        <label for="node-input-durationLength"><i class="icon-tag"></i>seconds</label>
-	        <input type="number" id="node-input-durationLength" value="0" />
-	    </div>
-	    <div class="form-row">
-	        <label for="node-input-silenceDetection"><i class="icon-tag"></i>on silence</label>
-	        <select id="node-input-silenceDetection">
-	            <option value="nothing">do nothing</option> 
-	            <option value="something">stop recording</option>
-	        </select>
-	    </div>
-	    <div id="silenceDurationWrapper" class="form-row">
-	        <label for="node-input-silenceDuration"><i class="icon-tag"></i>below duration in s</label>
-	        <input type="text" id="node-input-silenceDuration" value="2.0" />
-	    </div>
-	    <div id="silenceThresholdWrapper" class="form-row">
-	        <label for="node-input-silenceThreshold"><i class="icon-tag"></i>below threshold in %</label>
-	        <input type="text" id="node-input-silenceThreshold" value="2.0" />
-	    </div>
-	</div>
+    <div id="durationOptionWrapper">
+        <div class="form-row">
+            <label for="node-input-durationType"><i class="icon-tag"></i>record time</label>
+            <select id="node-input-durationType">
+                <option value="forever">record until a stop msg is send</option> 
+                <option value="limited">record for specified amount of seconds</option>
+            </select>
+        </div>
+        <div id="durationLengthWrapper" class="form-row">
+            <label for="node-input-durationLength"><i class="icon-tag"></i>seconds</label>
+            <input type="number" id="node-input-durationLength" value="0" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-silenceDetection"><i class="icon-tag"></i>on silence</label>
+            <select id="node-input-silenceDetection">
+                <option value="nothing">do nothing</option> 
+                <option value="something">stop recording</option>
+            </select>
+        </div>
+        <div id="silenceDurationWrapper" class="form-row">
+            <label for="node-input-silenceDuration"><i class="icon-tag"></i>below duration in s</label>
+            <input type="text" id="node-input-silenceDuration" value="2.0" />
+        </div>
+        <div id="silenceThresholdWrapper" class="form-row">
+            <label for="node-input-silenceThreshold"><i class="icon-tag"></i>below threshold in %</label>
+            <input type="text" id="node-input-silenceThreshold" value="2.0" />
+        </div>
+    </div>
     <h4>Output</h4>
     <div class="form-row">
         <label for="node-input-outputFormat"></i>output format</label>
@@ -211,7 +211,7 @@
         <input type="checkbox" id="node-input-debugOutput" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
         <label for="node-input-debugOutput" style="width: 70%;">detailed debug info to 2nd output</label>
     </div>
-	<h4>Name</h4>
+    <h4>Name</h4>
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">

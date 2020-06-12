@@ -16,7 +16,7 @@
 module.exports = function(RED) {
 
     const { spawn } = require("child_process");
-	const { exec } = require("child_process");
+    const { exec } = require("child_process");
     
     function SoxPlayNode(config) {
         RED.nodes.createNode(this,config);
@@ -62,7 +62,7 @@ module.exports = function(RED) {
         }
         
         function spawnPlay(){
-			
+            
             try{
                 node.soxPlay = spawn("sox",node.argArr);
             } 
@@ -109,8 +109,8 @@ module.exports = function(RED) {
             return;
         
         }
-		
-		node_status();
+        
+        node_status();
         
         if (node.outputDeviceRaw === 'default') {
             node.outputDevice = node.outputDeviceRaw;
@@ -167,7 +167,7 @@ module.exports = function(RED) {
         
     }
     RED.nodes.registerType("sox-play",SoxPlayNode);
-	
+
     RED.httpAdmin.get("/soxPlay/devices", RED.auth.needsPermission('sox-play.read'), function(req,res) {
         exec('aplay -l', (error, stdout, stderr) => {
             if (error) {
