@@ -8,7 +8,7 @@ a simple node-red wrapper around some of the record and play functionality of th
 
 # Prerequisites
 
-This node is made to work with the [sox commandline utility](http://sox.sourceforge.net/) on linux. To use it you will have to install sox. This can be done with the command `sudo apt-get install sox` from the commandline of the machine that node-red is running on.
+This node is made to work with the [sox commandline utility](http://sox.sourceforge.net/) and the [Alsa the Advanced Linux Sound Architecture](https://alsa-project.org/wiki/Main_Page) on linux. To use it you will have to install sox. This can be done with the command `sudo apt-get install sox` from the commandline of the machine that node-red is running on.
 Once you have sox installed you can install the node by running the following npm command in your Node-RED user directory (typically ~/.node-red):
 ```
 npm install johanneskropf/node-red-contrib-sox-record
