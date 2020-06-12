@@ -16,6 +16,8 @@
 module.exports = function(RED) {
 
     const { spawn } = require("child_process");
+    const { exec } = require("child_process");
+    const fs = require("fs");
     
     function SoxRecordNode(config) {
         RED.nodes.createNode(this,config);
@@ -24,7 +26,8 @@ module.exports = function(RED) {
         this.outputBufferArr = [];
         this.outputBuffer = false;
         this.argArr = [];
-        this.inputSource = config.inputSource;
+        this.inputSourceRaw = config.inputSource;
+        this.inputSource = "hw:";
         this.inputSourceArr = [];
         this.byteOrder = config.byteOrder;
         this.encoding = config.encoding;
@@ -32,9 +35,6 @@ module.exports = function(RED) {
         this.rate = config.rate;
         this.bits = config.bits;
         this.gain = config.gain;
-        this.highLowPass = config.highLowPass;
-        this.highpass = config.highpass;
-        this.lowpass = config.lowpass;
         this.durationType = config.durationType;
         this.durationLength = config.durationLength;
         this.silenceDetection = config.silenceDetection;
@@ -42,6 +42,9 @@ module.exports = function(RED) {
         this.silenceDuration = config.silenceDuration;
         this.outputFormat = config.outputFormat;
         this.debugOutput = config.debugOutput;
+        this.fileId = "";
+        this.filePath = "";
+        this.shm = true;
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -73,6 +76,47 @@ module.exports = function(RED) {
             
         }
         
+        function makeWav(){
+            
+            let msg1 = {};
+            let msg2 = {};
+            let wavOutputBufferArr = [];
+            let wavOutputBuffer = [];
+            
+            try{
+                node.soxWav = spawn("sox",[node.byteOrder,"-e",node.encoding,"-c",node.channels,"-r",node.rate,"-b",node.bits,"-t","raw",node.filePath,"-t","wav","-"]);
+            } 
+            catch (error) {
+                node.error(error);
+                return;
+            }
+            
+            node.soxWav.stderr.on('data', (data)=>{
+            
+                msg2.payload = data.toString();
+                node.send([null,msg2]);
+                
+            });
+            
+            node.soxWav.on('close', function (code,signal) {
+                
+                wavOutputBuffer = Buffer.concat(wavOutputBufferArr);
+                msg1.payload = wavOutputBuffer;
+                node.send([msg1,null]);
+                delete node.soxWav;
+                return;
+                
+            });
+            
+            node.soxWav.stdout.on('data', (data)=>{
+                
+                wavOutputBufferArr.push(data);
+                
+            });
+            return;
+            
+        }
+        
         function spawnRecord(){
         
             let msg1 = {};
@@ -98,12 +142,35 @@ module.exports = function(RED) {
             
             node.soxRecord.on('close', function (code,signal) {
                 
-                if (node.outputFormat == "once") {
+                if (node.outputFormat == "once" || node.outputFormat == "wav") {
+                    
                     node.outputBuffer = Buffer.concat(node.outputBufferArr);
                     node.outputBufferArr = [];
                     msg1.payload = node.outputBuffer;
-                    node.send([msg1,null]);
+                    if (node.outputFormat == "wav") {
+                        
+                        if (node.shm) {
+                            node.filePath = "/dev/shm/tmp" + node.fileId + ".raw";
+                        } else {
+                            node.filePath = "/tmp/tmp" + node.fileId + ".raw";
+                        }
+                        
+                        try {
+                            fs.writeFileSync(node.filePath,node.outputBuffer);
+                        }
+                        catch (error){
+                            node.error("error saving to /dev/shm/" + err.message);
+                        }
+                        makeWav();
+                        
+                    } else {
+                        
+                        node.send([msg1,null]);
+                    
+                    }
+                
                 }
+                
                 node.send([null,{payload:"complete"}]);
                 node_status(["finished","green","dot"],1500);
                 delete node.soxRecord;
@@ -113,9 +180,9 @@ module.exports = function(RED) {
             
             node.soxRecord.stdout.on('data', (data)=>{
                 
-                if (node.outputFormat == "once") {
+                if (node.outputFormat !== "stream") {
                     node.outputBufferArr.push(data);
-                } else if (node.outputFormat == "stream") {
+                } else {
                     msg1.payload = data;
                     node.send([msg1,null]);    
                 }
@@ -127,12 +194,22 @@ module.exports = function(RED) {
         
         node_status();
         
+        node.fileId = node.id.replace(/\./g,"");
+        
+        if (!fs.existsSync('/dev/shm')) { node.shm = false; }
+        
         if (node.debugOutput) {
             node.argArr.push("-t");
         } else {
             node.argArr.push("-q","-t");
+        }
+        
+        if (node.inputSourceRaw === 'default') {
+            node.inputSource = node.inputSourceRaw;
+        } else {
+            node.inputSource += node.inputSourceRaw.toString();
         }    
-        node.inputSourceArr = node.inputSource.split(" ");
+        node.inputSourceArr = ["alsa",node.inputSource];
         node.argArr = node.argArr.concat(node.inputSourceArr);
         node.argArr.push(node.byteOrder,"-e",node.encoding,"-c",node.channels,"-r",node.rate,"-b",node.bits,"-t","raw","-");
         if (node.silenceDetection == "something") {
@@ -142,19 +219,6 @@ module.exports = function(RED) {
             node.argArr.push("trim","0",node.durationLength);
         }
         node.argArr.push("gain",node.gain);
-        switch(node.highLowPass){
-            case "n":
-                break;
-            case "h":
-                node.argArr.push("highpass",node.highpass);
-                break;
-            case "l":
-                node.argArr.push("lowpass",node.lowpass);
-                break;
-            case "b":
-                node.argArr.push("highpass",node.highpass,"lowpass",node.lowpass);
-                break;
-        }
         
         node.on('input', function(msg) {
             
@@ -195,4 +259,25 @@ module.exports = function(RED) {
         
     }
     RED.nodes.registerType("sox-record",SoxRecordNode);
+    
+    RED.httpAdmin.get("/soxRecord/devices", RED.auth.needsPermission('sox-record.read'), function(req,res) {
+        exec('arecord -l', (error, stdout, stderr) => {
+            if (error) {
+                node.error(`exec error: ${error}`);
+                return;
+            }
+            if (stderr) { node.error(`stderr: ${stderr}`); }
+            if (stdout) {
+                let deviceArr = stdout.split("\n");
+                deviceArr = deviceArr.filter(line => line.match(/card/g));
+                deviceArr = deviceArr.map(device => {
+                    let deviceObj = {};
+                    deviceObj.name = device.replace(/\s\[[^\[\]]*\]/g, "");
+                    deviceObj.number = device.match(/[0-9](?=\:)/g);
+                    return deviceObj;
+                });
+                res.json(deviceArr);
+            }
+        });
+    });
 }

@@ -16,16 +16,13 @@
         color: '#c28285',
         defaults: {
             name: {value:""},
-            inputSource: {value:"alsa default", required:true},
+            inputSource: {value:"default", required:true},
             byteOrder: {value:"-L", required:true},
             encoding: {value:"signed-integer", required:true},
             channels: {value:1, required:true},
             rate: {value:16000, required:true},
             bits: {value:16, required:true},
-            advancedSettings: {value:false, required:true},
             gain: {value:"0", required:true},
-            highLowPass: {value:"n", required:true},
-            highpass: {value:200, required:true},
             lowpass: {value:8000, required:true},
             showDuration: {value:false, required:true},
             durationType: {value:"forever", required:true},
@@ -44,6 +41,14 @@
         },
         oneditprepare: function() {
             var node = this;
+            
+            $.getJSON('soxRecord/devices',function(data) {
+                console.log(data)
+                data.forEach(device => {
+                    $('#node-input-inputSource').append(`<option value="${device.number}">${device.name}</option>`);
+                });
+                $('#node-input-inputSource').val(node.inputSource);
+            });
             
             $("#node-input-durationType").on("change", function(){
                 let durVar = $("#node-input-durationType").val();
@@ -65,36 +70,11 @@
                 }
             });
 
-            $("#node-input-highLowPass").on("change", function(){
-                let passVar = $("#node-input-highLowPass").val();
-                if(passVar == "n"){
-                    $("#highpassWrapper").hide();
-                    $("#lowpassWrapper").hide();
-                } else if (passVar == "h") {
-                    $("#highpassWrapper").show();
-                    $("#lowpassWrapper").hide();
-                } else if (passVar == "l") {
-                    $("#highpassWrapper").hide();
-                    $("#lowpassWrapper").show();
-                } else if (passVar == "b") {
-                    $("#highpassWrapper").show();
-                    $("#lowpassWrapper").show();
-                }
-            });
-
             $("#node-input-showDuration").on("change", function(){
                 if(!$("#node-input-showDuration").prop("checked")){
                     $("#durationOptionWrapper").hide();
                 } else {
                     $("#durationOptionWrapper").show();
-                }
-            });
-
-            $("#node-input-advancedSettings").on("change", function(){
-                if(!$("#node-input-advancedSettings").prop("checked")){
-                    $("#advancedSettingsWrapper").hide();
-                } else {
-                    $("#advancedSettingsWrapper").show();
                 }
             });
         
@@ -105,8 +85,10 @@
 <script type="text/html" data-template-name="sox-record">
     <h4>Source</h4>
     <div class="form-row">
-        <label for="node-input-inputSource"><i class="icon-tag"></i>input source</label>
-        <input type="text" id="node-input-inputSource" value="alsa default" />
+        <label for="node-input-inputSource"></i>input device</label>
+        <select id="node-input-inputSource">
+            <option value="default">default device</option> 
+        </select>
     </div>
     <h4>Settings</h4>
     <div class="form-row">
@@ -137,32 +119,8 @@
         <input type="number" id="node-input-bits" value="16" />
     </div>
     <div class="form-row">
-        <label for="node-input-dvancedSettings">more</i></label>
-        <input type="checkbox" id="node-input-advancedSettings" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
-        <label for="node-input-advancedSettings" style="width: 70%;">show advanced settings</label>
-    </div>
-    <div id="advancedSettingsWrapper">
-        <div class="form-row">
-            <label for="node-input-gain"><i class="icon-tag"></i>gain in dB</label>
-            <input type="text" id="node-input-gain" value="0" />
-        </div>
-        <div class="form-row">
-            <label for="node-input-highLowPass"></i>add high-/lowpass</label>
-            <select id="node-input-highLowPass">
-                <option value="n">none</option>
-                <option value="h">add highpass filter</option> 
-                <option value="l">add lowpass filter</option>
-                <option value="b">add high & lowpass filter</option>
-            </select>
-        </div>
-        <div id="highpassWrapper" class="form-row">
-            <label for="node-input-highpass"><i class="icon-tag"></i>highpass freq.</label>
-            <input type="number" id="node-input-highpass" value="200" />
-        </div>
-        <div id="lowpassWrapper" class="form-row">
-            <label for="node-input-lowpass"><i class="icon-tag"></i>lowpass freq.</label>
-            <input type="number" id="node-input-lowpass" value="8000" />
-        </div>
+        <label for="node-input-gain"><i class="icon-tag"></i>gain in dB</label>
+        <input type="text" id="node-input-gain" value="0" />
     </div>
     <h4>Recording Duration</h4>
     <div class="form-row">
@@ -203,7 +161,8 @@
         <label for="node-input-outputFormat"></i>output format</label>
         <select id="node-input-outputFormat">
             <option value="stream">a stream of buffers while recording</option> 
-            <option value="once">a single buffer when recording ends</option>
+            <option value="once">a single raw buffer when recording ends</option>
+            <option value="wav">a single wav buffer when recording ends</option>
         </select>
     </div>
     <div class="form-row">
