@@ -30,6 +30,7 @@ module.exports = function(RED) {
         this.startNew = config.startNew;
         this.killNew = false;
         this.newPayload = "";
+        this.queue = [];
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -61,6 +62,27 @@ module.exports = function(RED) {
             
         }
         
+        function playQueue(){
+            
+            let queueItem = node.queue.shift();
+            node.argArr = [];
+            if (!node.debugOutput) { node.argArr.push('-q'); }
+            if (typeof queueItem === 'string') {
+                node.argArr.push(queueItem.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
+                spawnPlay();
+            } else if (Buffer.isBuffer(queueItem)) {
+                node.argArr.push('-','-t','alsa',node.outputDevice,'gain',node.gain);
+                spawnPlay();
+                try {
+                    node.soxPlay.stdin.write(queueItem);
+                } catch (error) {
+                    node.error('failed to write buffer to stdin: ' + error)
+                }
+            }
+            return;
+            
+        }
+        
         function spawnPlay(){
             
             try{
@@ -72,7 +94,11 @@ module.exports = function(RED) {
                 return;
             }
             
-            node_status(["playing","blue","dot"]);
+            if (node.queue.length === 0) {
+                node_status(["playing","blue","dot"]);
+            } else {
+                node_status(["playing | " + node.queue.length + " in queue","blue","dot"]);
+            }
             
             node.soxPlay.stderr.on('data', (data)=>{
             
@@ -85,7 +111,9 @@ module.exports = function(RED) {
                 node.send({payload:"complete"});
                 node_status(["finished","green","dot"],1500);
                 delete node.soxPlay;
-                if (!node.killNew) {
+                if (node.queue.length !== 0) {
+                    playQueue();
+                } else if (!node.killNew) {
                     node.argArr = [];
                     if (!node.debugOutput) { node.argArr.push('-q'); }
                 } else {
@@ -122,9 +150,20 @@ module.exports = function(RED) {
         
         node.on('input', function(msg) {
             if (msg.payload === 'stop' && node.soxPlay) {
+                node.queue = [];
                 node.soxPlay.kill();
             } else if (msg.payload === 'stop' && !node.soxPlay) {
                 node.warn('not playing');
+            } else if (msg.payload === 'clear' && node.queue.length !== 0) {
+                node.queue = [];
+                node.send({payload:'queue cleared'});
+                node_status(["playing","blue","dot"]);
+            } else if (msg.payload === 'clear' && node.queue.length === 0) {
+                node.warn('queue is already empty');
+            } else if (msg.payload === 'next' && node.queue.length !== 0) {
+                node.soxPlay.kill();
+            } else if (msg.payload === 'next' && node.queue.length === 0) {
+                node.warn('no other items in the queue');
             } else if (!node.soxPlay && typeof msg.payload === 'string') {
                 node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
                 spawnPlay();
@@ -147,7 +186,14 @@ module.exports = function(RED) {
                 node.newPayload = msg.payload;
                 node.killNew = true;
                 node.soxPlay.kill();
-                
+            } else if (node.soxPlay && node.startNew === 'queue') {
+                node.queue.push(msg.payload);
+                if (node.queue.length === 1) {
+                    node.send({payload:'added to queue. There is now ' + node.queue.length + ' file in the queue.' })
+                } else {
+                    node.send({payload:'added to queue. There is now ' + node.queue.length + ' files in the queue.' })
+                }
+                node_status(["playing | " + node.queue.length + " in queue","blue","dot"]);
             } else {
                 node.warn('ignoring input as there is already a playback in progress');
             }
@@ -157,6 +203,8 @@ module.exports = function(RED) {
         node.on("close",function() {
         
             node_status();
+            
+            node.queue = [];
             
             if(node.soxPlay) {
                 node.soxPlay.kill();
