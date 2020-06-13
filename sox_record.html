@@ -36,6 +36,16 @@
         inputs:1,
         outputs:2,
         icon: "font-awesome/fa-microphone",
+        inputLabels: function(index) {
+            return 'start or stop as msg.payload';
+        },
+        outputLabels: function(index) {
+            if (index === 0) {
+                return 'audio in the selected format';
+            } else {
+                return 'recording progress info';
+            }
+        },
         label: function() {
             return this.name||"sox-record";
         },
@@ -178,5 +188,7 @@
 </script>
 
 <script type="text/html" data-help-name="sox-record">
-    <p>A simple wrapper node around the record functionality of the sox commandline utility. For detailed usage information please go to <a href="https://github.com/johanneskropf/node-red-contrib-sox-utils">node-red-contrib-sox-utils</a>.</p>
+    <p><strong>A simple wrapper node around the record functionality of the sox commandline utility.</strong></p>
+    <p>The node will record audio on the machine node-red runs on from the configured input source. To start recording send a <code>msg.payload</code> of <strong>start</strong> and to stop it a <code>msg.payload</code> of <strong>stop</strong>. It will output the recorded audio as a buffer in the configured format to the first output as a <code>msg.payload</code> and any recording information or debug info in the <code>msg.payload</code> to its second output.</p>
+    <p><i>For detailed usage information please go to <a href="https://github.com/johanneskropf/node-red-contrib-sox-utils">node-red-contrib-sox-utils</a>.</i></p>
 </script>

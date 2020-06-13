@@ -24,6 +24,12 @@
         inputs:1,
         outputs:1,
         icon: "font-awesome/fa-volume-up",
+        inputLabels: function(index) {
+            return 'wav buffer or wav file path';
+        },
+        outputLabels: function(index) {
+            return 'playback info';
+        },
         label: function() {
             return this.name||"sox-play";
         },
@@ -72,5 +78,7 @@
 </script>
 
 <script type="text/html" data-help-name="sox-play">
-    <p>A simple wrapper node around the play functionality of the sox commandline utility. For detailed usage information please go to <a href="https://github.com/johanneskropf/node-red-contrib-sox-utils">node-red-contrib-sox-utils</a>.</p>
+    <p><strong>A simple wrapper node around the play functionality of the sox commandline utility.</strong></p>
+    <p>The node will play audio on the machine node-red runs on to the choosen output device from either a wav buffer send to it in the <code>msg.payload</code> or a path to an audio file as a string in the <code>msg.payload</code>. It will output playback information and any debug info in the <code>msg.payload</code> to its output. You can stop the playback at anytime with a <code>msg.payload</code> of <strong>stop</strong>.</p>
+    <p><i>For detailed usage information please go to <a href="https://github.com/johanneskropf/node-red-contrib-sox-utils">node-red-contrib-sox-utils</a>.</i></p>
 </script>
