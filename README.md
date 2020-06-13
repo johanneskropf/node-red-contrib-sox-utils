@@ -39,5 +39,6 @@ If in single wav buffer output mode you can write the resulting buffer directly 
 
 The play node will play an audio file (*Note: If you want to play mp3's with sox you will have to install a handler for this, for example with:*`sudo apt-get install libsox-fmt-mp3`) which was send to the node as either a string containing a path to an audio file in the `msg.payload` or as a single buffer containing the audio data in the `msg.payload`. It will try to play the audio on the selected output from the nodes menu. If you select the detailed info option it will send detailed playback progress and information to the output. When finished it will always send a `msg.payload` of `complete`.
 You can stop playback at anytime with a `msg.payload` of `stop`.
+
 The node can behave in diffrent ways when a new input arrives while a playback is in progress. The behavior can be set in the nodes options. You can choose if it should either ignore the new input, stop the current playback and replace it with the new input or add new input to a queue.
 If the queue mode is selected the node will also accept a `msg.payload` of `clear` to clear the queue and stop the playback after the current item and a `msg.payload` of next to skip to the next item in the queue. A `msg.payload` of stop in queue mode will also clear the queue in addition to stopping the playback.
