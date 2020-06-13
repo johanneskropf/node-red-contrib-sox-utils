@@ -41,4 +41,4 @@ The play node will play an audio file (*Note: If you want to play mp3's with sox
 You can stop playback at anytime with a `msg.payload` of `stop`.
 
 The node can behave in diffrent ways when a new input arrives while a playback is in progress. The behavior can be set in the nodes options. You can choose if it should either ignore the new input, stop the current playback and replace it with the new input or add new input to a queue.
-If the queue mode is selected the node will also accept a `msg.payload` of `clear` to clear the queue and stop the playback after the current item and a `msg.payload` of next to skip to the next item in the queue. A `msg.payload` of stop in queue mode will also clear the queue in addition to stopping the playback.
+If the queue mode is selected the node will also accept a `msg.payload` of `clear` to clear the queue and stop the playback after the current item and a `msg.payload` of `next` to skip to the next item in the queue. A `msg.payload` of stop in queue mode will also clear the queue in addition to stopping the playback.
