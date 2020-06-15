@@ -41,7 +41,14 @@
         },
         outputLabels: function(index) {
             if (index === 0) {
-                return 'audio in the selected format';
+                switch (this.outputFormat) {
+                    case 'stream':
+                        return 'raw audio buffer stream';
+                    case 'once':
+                        return 'raw audio buffer when finished';
+                    case 'wav':
+                        return 'wav buffer when finished';
+                }
             } else {
                 return 'recording progress info';
             }
