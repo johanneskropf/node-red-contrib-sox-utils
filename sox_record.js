@@ -136,7 +136,6 @@ module.exports = function(RED) {
             } else {
                 node_status(["recording","blue","dot"]);
             }
-            node_status(["recording","blue","dot"]);
             
             node.soxRecord.stderr.on('data', (data)=>{
             
