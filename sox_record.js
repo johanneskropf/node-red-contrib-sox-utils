@@ -131,6 +131,11 @@ module.exports = function(RED) {
                 return;
             }
             
+            if (node.outputFormat === 'stream') {
+                node_status(["streaming","blue","dot"]);
+            } else {
+                node_status(["recording","blue","dot"]);
+            }
             node_status(["recording","blue","dot"]);
             
             node.soxRecord.stderr.on('data', (data)=>{
@@ -159,7 +164,7 @@ module.exports = function(RED) {
                             fs.writeFileSync(node.filePath,node.outputBuffer);
                         }
                         catch (error){
-                            node.error("error saving to /dev/shm/" + err.message);
+                            node.error("error saving tmp file" + err.message);
                         }
                         makeWav();
                         
