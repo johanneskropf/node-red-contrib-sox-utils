@@ -1,0 +1,156 @@
+<!--
+  Copyright 2020, Johannes Kropf
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<script type="text/javascript">
+    RED.nodes.registerType('sox-convert',{
+        category: 'Sox Utils',
+        color: '#c28285',
+        defaults: {
+            name: {value:""},
+            conversionType: {value:"wav", required:true},
+            wavMore: {value:false, required:true},
+            wavByteOrder: {value:"-L", required:true},
+            wavEncoding: {value:"signed-integer", required:true},
+            wavChannels: {value:1, required:true},
+            wavRate: {value:16000, required:true},
+            wavBits: {value:16, required:true},
+            mp3More: {value:false, required:true},
+            mp3Channels: {value:2, required:true},
+            mp3Rate: {value:44100, required:true},
+            mp3BitRate: {value:128, required:true}
+        },
+        inputs:1,
+        outputs:2,
+        icon: "font-awesome/fa-arrow-right",
+        inputLabels: function(index) {
+            return 'input audio to convert';
+        },
+        outputLabels: function(index) {
+            if (index === 0) {
+                return "converted audio"
+            } else {
+                return 'conversion debug';
+            }
+        },
+        label: function() {
+            return this.name||"sox-convert";
+        },
+        oneditprepare: function() {
+            var node = this;
+            
+            $("#node-input-conversionType").on("change", function(){
+                let typeVar = $("#node-input-conversionType").val();
+                if(typeVar == "wav"){
+                    $("#wavWrapper").show();
+                    $("#mp3Wrapper").hide();
+                } else {
+                    $("#mp3Wrapper").show();
+                    $("#wavWrapper").hide();
+                }
+            });
+            
+            $("#node-input-wavMore").on("change", function(){
+                if(!$("#node-input-wavMore").prop("checked")){
+                    $("#wavWrapperMore").hide();
+                } else {
+                    $("#wavWrapperMore").show();
+                }
+            });
+            
+            $("#node-input-mp3More").on("change", function(){
+                if(!$("#node-input-mp3More").prop("checked")){
+                    $("#mp3WrapperMore").hide();
+                } else {
+                    $("#mp3WrapperMore").show();
+                }
+            });
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="sox-convert">
+    <div class="form-row">
+        <label for="node-input-conversionType"></i>convert to</label>
+        <select id="node-input-conversionType">
+            <option value="wav">wav</option> 
+            <option value="mp3">mp3</option>
+        </select>
+    </div>
+    <h4>Settings</h4>
+    <div id="wavWrapper">
+        <div class="form-row">
+            <label for="node-input-wavMore">advanced</i></label>
+            <input type="checkbox" id="node-input-wavMore" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
+            <label for="node-input-wavMore" style="width: 70%;">show more conversion options</label>
+        </div>
+        <div id="wavWrapperMore">
+            <div class="form-row">
+                <label for="node-input-wavByteOrder"></i>byte order</label>
+                <select id="node-input-wavByteOrder">
+                    <option value="-L">little endian</option> 
+                    <option value="-B">big endian</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-wavEncoding"></i>encoding</label>
+                <select id="node-input-wavEncoding">
+                    <option value="signed-integer">signed-integer</option> 
+                    <option value="unsigned-integer">unsigned-integer</option>
+                    <option value="floating-point">floating-point</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-wavChannels"><i class="icon-tag"></i>channels</label>
+                <input type="number" id="node-input-wavChannels" value="1" />
+            </div>
+            <div class="form-row">
+                <label for="node-input-wavRate"><i class="icon-tag"></i>sample-rate</label>
+                <input type="number" id="node-input-wavRate" value="16000" />
+            </div>
+            <div class="form-row">
+                <label for="node-input-wavBits"><i class="icon-tag"></i>bit-depth</label>
+                <input type="number" id="node-input-wavBits" value="16" />
+            </div>
+        </div> 
+    </div>   
+    <div id="mp3Wrapper">
+        <div class="form-row">
+            <label for="node-input-mp3BitRate"><i class="icon-tag"></i>bit-rate</label>
+            <input type="number" id="node-input-mp3BitRate" value="128" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-mp3More">advanced</i></label>
+            <input type="checkbox" id="node-input-mp3More" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
+            <label for="node-input-mp3More" style="width: 70%;">show more conversion options</label>
+        </div>
+        <div id="mp3WrapperMore">
+            <div class="form-row">
+                <label for="node-input-mp3Channels"><i class="icon-tag"></i>channels</label>
+                <input type="number" id="node-input-mp3Channels" value="2" />
+            </div>
+            <div class="form-row">
+                <label for="node-input-mp3Rate"><i class="icon-tag"></i>sample-rate</label>
+                <input type="number" id="node-input-mp3Rate" value="44100" />
+            </div>
+        </div>
+    </div>
+    <h4>Name</h4>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>	
+</script>
+
+<script type="text/html" data-help-name="sox-convert">
+    <p><strong>A simple wrapper node around the conversion functionality of the sox commandline utility.</strong></p>
+    <p></p>
+</script>

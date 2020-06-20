@@ -17,6 +17,7 @@ module.exports = function(RED) {
 
     const { spawn } = require("child_process");
     const { exec } = require("child_process");
+    const fs = require("fs");
     
     function SoxPlayNode(config) {
         RED.nodes.createNode(this,config);
@@ -31,6 +32,10 @@ module.exports = function(RED) {
         this.killNew = false;
         this.newPayload = "";
         this.queue = [];
+        this.playingNow;
+        this.fileId = "";
+        this.filePath = "";
+        this.shm = true;
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -119,13 +124,6 @@ module.exports = function(RED) {
                 } else {
                     node.killNew = false;
                     spawnPlay();
-                    if (Buffer.isBuffer(node.newPayload)) {
-                        try {
-                            node.soxPlay.stdin.write(node.newPayload);
-                        } catch (error) {
-                            node.error('failed to write buffer to stdin: ' + error)
-                        }
-                    }
                 }
                 return;
                 
@@ -140,6 +138,10 @@ module.exports = function(RED) {
         
         node_status();
         
+        node.fileId = node.id.replace(/\./g,"");
+        
+        if (!fs.existsSync('/dev/shm')) { node.shm = false; }
+        
         if (node.outputDeviceRaw === 'default') {
             node.outputDevice = node.outputDeviceRaw;
         } else {
@@ -149,6 +151,9 @@ module.exports = function(RED) {
         if (!node.debugOutput) { node.argArr.push('-q'); }
         
         node.on('input', function(msg) {
+            
+            if (Buffer.isBuffer(msg.payload) && msg.payload.length === 0) { return; }
+            
             if (msg.payload === 'stop' && node.soxPlay) {
                 node.queue = [];
                 node.soxPlay.kill();
@@ -168,26 +173,34 @@ module.exports = function(RED) {
                 node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
                 spawnPlay();
             } else if (!node.soxPlay && Buffer.isBuffer(msg.payload)) {
-                node.argArr.push('-','-t','alsa',node.outputDevice,'gain',node.gain);
+                if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); return; }
+                node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + "." + msg.format : "/tmp/" + node.fileId + "." + msg.format;
+                fs.writeFileSync(node.filePath, msg.payload);
+                node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'gain',node.gain);
                 spawnPlay();
-                try {
-                    node.soxPlay.stdin.write(msg.payload);
-                } catch (error) {
-                    node.error('failed to write buffer to stdin: ' + error)
-                }
             } else if (node.soxPlay && node.startNew === 'start') {
                 node.argArr = [];
                 if (!node.debugOutput) { node.argArr.push('-q'); }
                 if (typeof msg.payload === 'string') {
                     node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
                 } else if (Buffer.isBuffer(msg.payload)) {
-                    node.argArr.push('-','-t','alsa',node.outputDevice,'gain',node.gain);
+                    if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); return; }
+                    node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + "new." + msg.format : "/tmp/" + node.fileId + "new." + msg.format;
+                    fs.writeFileSync(node.filePath, msg.payload);
+                    node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'gain',node.gain);
                 }
                 node.newPayload = msg.payload;
                 node.killNew = true;
                 node.soxPlay.kill();
             } else if (node.soxPlay && node.startNew === 'queue') {
-                node.queue.push(msg.payload);
+                if (Buffer.isBuffer(msg.payload)) {
+                    if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); return; }
+                    node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + node.queue.length + "." + msg.format : "/tmp/" + node.fileId + node.queue.length + "." + msg.format;
+                    fs.writeFileSync(node.filePath, msg.payload);
+                    node.queue.push(node.filePath);
+                } else {
+                    node.queue.push(msg.payload);
+                }
                 if (node.queue.length === 1) {
                     node.send({payload:'added to queue. There is now ' + node.queue.length + ' file in the queue.' })
                 } else {
@@ -205,6 +218,17 @@ module.exports = function(RED) {
             node_status();
             
             node.queue = [];
+            
+            const checkDir = (node.shm) ? "/dev/shm/" : "/tmp/";
+            fs.readdir(checkDir, (err,files) => {
+                if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
+                files.forEach(file => {
+                    if (file.match(node.fileId)) {
+                        fs.unlinkSync(checkDir + file);
+                    }
+                });
+                return;
+            });
             
             if(node.soxPlay) {
                 node.soxPlay.kill();

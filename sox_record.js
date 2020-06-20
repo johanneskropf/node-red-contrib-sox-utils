@@ -102,6 +102,7 @@ module.exports = function(RED) {
                 
                 wavOutputBuffer = Buffer.concat(wavOutputBufferArr);
                 msg1.payload = wavOutputBuffer;
+                msg1.format = "wav";
                 node.send([msg1,null]);
                 delete node.soxWav;
                 return;
@@ -169,6 +170,7 @@ module.exports = function(RED) {
                         
                     } else {
                         
+                        msg1.format = "raw";
                         node.send([msg1,null]);
                     
                     }
@@ -254,6 +256,17 @@ module.exports = function(RED) {
         node.on("close",function() {
         
             node_status();
+            
+            const checkDir = (node.shm) ? "/dev/shm/" : "/tmp/";
+            fs.readdir(checkDir, (err,files) => {
+                if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
+                files.forEach(file => {
+                    if (file.match(node.fileId)) {
+                        fs.unlinkSync(checkDir + file);
+                    }
+                });
+                return;
+            });
             
             if(node.soxRecord) {
                 node.soxRecord.kill();
