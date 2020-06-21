@@ -98,7 +98,11 @@ module.exports = function(RED) {
             node.soxConvert.on('close', function (code,signal) {
                     
                 msg1.format = node.conversionType;
-                msg1.payload = fs.readFileSync(node.filePath);
+                try {
+                    msg1.payload = fs.readFileSync(node.filePath);
+                } catch (error) {
+                    node.error("couldnt get tmp file after conversion");
+                }
                 node.send([msg1,null]);
                 node.send([null,{payload:"complete"}]);
                 node_status(["finished","green","dot"],1500);
@@ -150,18 +154,23 @@ module.exports = function(RED) {
             
             if (Buffer.isBuffer(msg.payload)) {
                 
-                if (msg.payload.length === 0) { node.error("empty buffer"); return; }
-                if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); return; }
+                if (msg.payload.length === 0) { node.error("empty buffer"); node_status(["error","red","dot"],1500); return; }
+                if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
                 node.inputFilePath = (node.shm) ? "/dev/shm/input" + node.fileId + "." + msg.format : "/tmp/input" + node.fileId + "." + msg.format;
-                fs.writeFileSync(node.inputFilePath, msg.payload);
+                try {
+                    fs.writeFileSync(node.inputFilePath, msg.payload);
+                } catch (error) {
+                    node.error("couldnt write tmp file");
+                    node_status(["error","red","dot"],1500)
+                }
                 
             } else if (typeof msg.payload === "string") {
-                if (!fs.existsSync(msg.payload)) { node.error("this file doesnt exist"); return; }
+                if (!fs.existsSync(msg.payload)) { node.error("this file doesnt exist"); node_status(["error","red","dot"],1500); return; }
                 node.inputFilePath = msg.payload;
                 
             }
             
-            if (node.inputFilePath.length === 0) { node.error("not a valid input"); return; }
+            if (node.inputFilePath.length === 0) { node.error("not a valid input"); node_status(["error","red","dot"],1500); return; }
             
             node.argArr1 = [node.inputFilePath];
             node.argArr = node.argArr1.concat(node.argArr2);
@@ -179,7 +188,11 @@ module.exports = function(RED) {
                 if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
                 files.forEach(file => {
                     if (file.match(node.fileId)) {
-                        fs.unlinkSync(checkDir + file);
+                        try {
+                            fs.unlinkSync(checkDir + file);
+                        } catch (error) {
+                            node.error("couldnt delete leftover " + file);
+                        }
                     }
                 });
                 return;

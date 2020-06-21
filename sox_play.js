@@ -72,18 +72,8 @@ module.exports = function(RED) {
             let queueItem = node.queue.shift();
             node.argArr = [];
             if (!node.debugOutput) { node.argArr.push('-q'); }
-            if (typeof queueItem === 'string') {
-                node.argArr.push(queueItem.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
-                spawnPlay();
-            } else if (Buffer.isBuffer(queueItem)) {
-                node.argArr.push('-','-t','alsa',node.outputDevice,'gain',node.gain);
-                spawnPlay();
-                try {
-                    node.soxPlay.stdin.write(queueItem);
-                } catch (error) {
-                    node.error('failed to write buffer to stdin: ' + error)
-                }
-            }
+            node.argArr.push(queueItem.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
+            spawnPlay();
             return;
             
         }
@@ -152,7 +142,7 @@ module.exports = function(RED) {
         
         node.on('input', function(msg) {
             
-            if (Buffer.isBuffer(msg.payload) && msg.payload.length === 0) { return; }
+            if (Buffer.isBuffer(msg.payload) && msg.payload.length === 0) { node.error("empty buffer"); node_status(["error","red","dot"],1500); return; }
             
             if (msg.payload === 'stop' && node.soxPlay) {
                 node.queue = [];
@@ -173,9 +163,13 @@ module.exports = function(RED) {
                 node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
                 spawnPlay();
             } else if (!node.soxPlay && Buffer.isBuffer(msg.payload)) {
-                if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); return; }
+                if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
                 node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + "." + msg.format : "/tmp/" + node.fileId + "." + msg.format;
-                fs.writeFileSync(node.filePath, msg.payload);
+                try {
+                    fs.writeFileSync(node.filePath, msg.payload);
+                } catch (error) {
+                    node.error("couldnt write tmp file");
+                }
                 node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'gain',node.gain);
                 spawnPlay();
             } else if (node.soxPlay && node.startNew === 'start') {
@@ -184,9 +178,13 @@ module.exports = function(RED) {
                 if (typeof msg.payload === 'string') {
                     node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
                 } else if (Buffer.isBuffer(msg.payload)) {
-                    if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); return; }
+                    if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
                     node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + "new." + msg.format : "/tmp/" + node.fileId + "new." + msg.format;
-                    fs.writeFileSync(node.filePath, msg.payload);
+                    try {
+                        fs.writeFileSync(node.filePath, msg.payload);
+                    } catch (error) {
+                        node.error("couldnt write tmp file");
+                    }
                     node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'gain',node.gain);
                 }
                 node.newPayload = msg.payload;
@@ -194,9 +192,13 @@ module.exports = function(RED) {
                 node.soxPlay.kill();
             } else if (node.soxPlay && node.startNew === 'queue') {
                 if (Buffer.isBuffer(msg.payload)) {
-                    if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); return; }
+                    if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
                     node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + node.queue.length + "." + msg.format : "/tmp/" + node.fileId + node.queue.length + "." + msg.format;
-                    fs.writeFileSync(node.filePath, msg.payload);
+                    try {
+                        fs.writeFileSync(node.filePath, msg.payload);
+                    } catch (error) {
+                        node.error("couldnt write tmp file");
+                    }
                     node.queue.push(node.filePath);
                 } else {
                     node.queue.push(msg.payload);
@@ -224,7 +226,11 @@ module.exports = function(RED) {
                 if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
                 files.forEach(file => {
                     if (file.match(node.fileId)) {
-                        fs.unlinkSync(checkDir + file);
+                        try {
+                            fs.unlinkSync(checkDir + file);
+                        } catch (error) {
+                            node.error("couldnt delete leftover " + file);
+                        }
                     }
                 });
                 return;
