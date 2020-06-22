@@ -82,6 +82,21 @@ module.exports = function(RED) {
             
         }
         
+        function guessFormat(input){
+            
+            const formats = [
+                [["wav"],[0x52,0x49,0x46,0x46]],
+                [["flac"],[0x66,0x4C,0x61,0x43]],
+                [["ogg"],[0x4F,0x67,0x67,0x53,0x00,0x02,0x00,0x00]],
+                [["mp3"],[0x49,0x44,0x33]],
+                [["mp3"],[0xFF,0xFB]]
+            ];
+            const result = formats.filter(element => input.includes(Buffer.from(element[1])));
+            if (result.length === 0) { return false; }
+            return result[0][0];
+            
+        }
+        
         function spawnConvert(){
         
             let msg1 = {};
@@ -134,7 +149,11 @@ module.exports = function(RED) {
         
         if (!fs.existsSync('/dev/shm')) { node.shm = false; }
         
-        node.filePath = (node.shm) ? "/dev/shm/" + node.fileId : "/tmp/" + node.fileId;
+        if (node.outputToFile) {
+            node.filePath = node.manualPath;
+        } else {
+            node.filePath = (node.shm) ? "/dev/shm/" + node.fileId : "/tmp/" + node.fileId;
+        }
         
         switch (node.conversionType) {
             case "wav":
@@ -183,8 +202,16 @@ module.exports = function(RED) {
             if (Buffer.isBuffer(msg.payload)) {
                 
                 if (msg.payload.length === 0) { node.error("empty buffer"); node_status(["error","red","dot"],1500); return; }
-                if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
-                node.inputFilePath = (node.shm) ? "/dev/shm/input" + node.fileId + "." + msg.format : "/tmp/input" + node.fileId + "." + msg.format;
+                if (Buffer.isBuffer(msg.payload)) {
+                    if (msg.payload.length === 0) { node.error("empty buffer"); node_status(["error","red","dot"],1500); return; }
+                    const testBuffer = msg.payload.slice(0,8);
+                    let testFormat = guessFormat(testBuffer);
+                    if (!testFormat) {
+                        if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
+                        testFormat = msg.format;
+                    }
+                    node.inputFilePath = (node.shm) ? "/dev/shm/" + node.fileId + "." + testFormat : "/tmp/" + node.fileId + "." + testFormat;
+                }
                 try {
                     fs.writeFileSync(node.inputFilePath, msg.payload);
                 } catch (error) {

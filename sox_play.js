@@ -67,6 +67,21 @@ module.exports = function(RED) {
             
         }
         
+        function guessFormat(input){
+            
+            const formats = [
+                [["wav"],[0x52,0x49,0x46,0x46]],
+                [["flac"],[0x66,0x4C,0x61,0x43]],
+                [["ogg"],[0x4F,0x67,0x67,0x53,0x00,0x02,0x00,0x00]],
+                [["mp3"],[0x49,0x44,0x33]],
+                [["mp3"],[0xFF,0xFB]]
+            ];
+            const result = formats.filter(element => input.includes(Buffer.from(element[1])));
+            if (result.length === 0) { return false; }
+            return result[0][0];
+            
+        }
+        
         function playQueue(){
             
             let queueItem = node.queue.shift();
@@ -142,7 +157,16 @@ module.exports = function(RED) {
         
         node.on('input', function(msg) {
             
-            if (Buffer.isBuffer(msg.payload) && msg.payload.length === 0) { node.error("empty buffer"); node_status(["error","red","dot"],1500); return; }
+            if (Buffer.isBuffer(msg.payload)) {
+                if (msg.payload.length === 0) { node.error("empty buffer"); node_status(["error","red","dot"],1500); return; }
+                const testBuffer = msg.payload.slice(0,8);
+                let testFormat = guessFormat(testBuffer);
+                if (!testFormat) {
+                    if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
+                    testFormat = msg.format;
+                }
+                node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + "." + testFormat : "/tmp/" + node.fileId + "." + testFormat;
+            }
             
             if (msg.payload === 'stop' && node.soxPlay) {
                 node.queue = [];
@@ -163,8 +187,6 @@ module.exports = function(RED) {
                 node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
                 spawnPlay();
             } else if (!node.soxPlay && Buffer.isBuffer(msg.payload)) {
-                if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
-                node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + "." + msg.format : "/tmp/" + node.fileId + "." + msg.format;
                 try {
                     fs.writeFileSync(node.filePath, msg.payload);
                 } catch (error) {
@@ -178,8 +200,6 @@ module.exports = function(RED) {
                 if (typeof msg.payload === 'string') {
                     node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
                 } else if (Buffer.isBuffer(msg.payload)) {
-                    if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
-                    node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + "new." + msg.format : "/tmp/" + node.fileId + "new." + msg.format;
                     try {
                         fs.writeFileSync(node.filePath, msg.payload);
                     } catch (error) {
@@ -192,8 +212,6 @@ module.exports = function(RED) {
                 node.soxPlay.kill();
             } else if (node.soxPlay && node.startNew === 'queue') {
                 if (Buffer.isBuffer(msg.payload)) {
-                    if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
-                    node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + node.queue.length + "." + msg.format : "/tmp/" + node.fileId + node.queue.length + "." + msg.format;
                     try {
                         fs.writeFileSync(node.filePath, msg.payload);
                     } catch (error) {
