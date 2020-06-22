@@ -33,13 +33,23 @@ module.exports = function(RED) {
         this.wavChannels = config.wavChannels;
         this.wavRate = config.wavRate;
         this.wavBits = config.wavBits;
+        this.flacMore = config.flacMore;
+        this.flacCompression = config.flacCompression;
+        this.flacChannels = config.flacChannels;
+        this.flacRate = config.flacRate;
+        this.flacBits = config.flacBits;
         this.mp3More = config.mp3More;
         this.mp3Channels = config.mp3Channels;
         this.mp3Rate = config.mp3Rate;
         this.mp3BitRate = config.mp3BitRate;
+        this.oggMore = config.oggMore;
+        this.oggCompression = config.oggCompression;
+        this.oggChannels = config.oggChannels;
+        this.oggRate = config.oggRate;
         this.fileId = "";
         this.filePath = "";
         this.inputFilePath = "";
+        this.debugOutput = config.debugOutput;
         this.shm = true;
         var node = this;
         
@@ -124,11 +134,11 @@ module.exports = function(RED) {
         
         if (!fs.existsSync('/dev/shm')) { node.shm = false; }
         
-        node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + ".mp3" : "/tmp/" + node.fileId + ".mp3";
+        node.filePath = (node.shm) ? "/dev/shm/" + node.fileId : "/tmp/" + node.fileId;
         
         switch (node.conversionType) {
             case "wav":
-                node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + ".wav" : "/tmp/" + node.fileId + ".wav";
+                node.filePath += ".wav";
                 if (node.wavMore) {
                     node.argArr2 = [node.wavByteOrder,"-e",node.wavEncoding,"-c",node.wavChannels,"-r",node.wavRate,"-b",node.wavBits,node.filePath];
                 } else {
@@ -136,12 +146,30 @@ module.exports = function(RED) {
                 }
                 break;
                 
+            case "flac":
+                node.filePath += ".flac";
+                if (node.flacMore) {
+                    node.argArr2 = ["-C",node.flacCompression,"-c",node.flacChannels,"-r",node.flacRate,"-b",node.flacBits,node.filePath];
+                } else {
+                    node.argArr2 = ["-C",node.flacCompression,node.filePath];
+                }
+                break;
+                
             case "mp3":
-                node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + ".mp3" : "/tmp/" + node.fileId + ".mp3";
+                node.filePath += ".mp3";
                 if (node.mp3More) {
                     node.argArr2 = ["-c",node.mp3Channels,"-r",node.mp3Rate,"-C",node.mp3BitRate,node.filePath];
                 } else {
                     node.argArr2 = ["-C",node.mp3BitRate,node.filePath];
+                }
+                break;
+                
+            case "ogg":
+                node.filePath += ".ogg";
+                if (node.oggMore) {
+                    node.argArr2 = ["-c",node.oggChannels,"-r",node.oggRate,"-C",node.oggCompression,node.filePath];
+                } else {
+                    node.argArr2 = ["-C",node.oggCompression,node.filePath];
                 }
                 break;
         }
@@ -172,7 +200,9 @@ module.exports = function(RED) {
             
             if (node.inputFilePath.length === 0) { node.error("not a valid input"); node_status(["error","red","dot"],1500); return; }
             
-            node.argArr1 = [node.inputFilePath];
+            node.argArr1 = [];
+            if (node.debugOutput) { node.argArr1.push("-V3"); }
+            node.argArr1.push(node.inputFilePath);
             node.argArr = node.argArr1.concat(node.argArr2);
                     
             spawnConvert();

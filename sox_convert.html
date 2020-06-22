@@ -23,10 +23,20 @@
             wavChannels: {value:1, required:true},
             wavRate: {value:16000, required:true},
             wavBits: {value:16, required:true},
+            flacMore: {value:false, required:true},
+            flacCompression: {value:8, required:true},
+            flacChannels: {value:1, required:true},
+            flacRate: {value:16000, required:true},
+            flacBits: {value:16, required:true},
             mp3More: {value:false, required:true},
             mp3Channels: {value:2, required:true},
             mp3Rate: {value:44100, required:true},
-            mp3BitRate: {value:128, required:true}
+            mp3BitRate: {value:128, required:true},
+            oggMore: {value:false, required:true},
+            oggCompression: {value:3, required:true},
+            oggChannels: {value:2, required:true},
+            oggRate: {value:44100, required:true},
+            debugOutput: {value:false, required:true}
         },
         inputs:1,
         outputs:2,
@@ -52,9 +62,23 @@
                 if(typeVar == "wav"){
                     $("#wavWrapper").show();
                     $("#mp3Wrapper").hide();
-                } else {
+                    $("#flacWrapper").hide();
+                    $("#oggWrapper").hide();
+                } else if (typeVar == "flac") {
+                    $("#flacWrapper").show();
+                    $("#wavWrapper").hide();
+                    $("#mp3Wrapper").hide();
+                    $("#oggWrapper").hide();
+                } else if (typeVar == "mp3") {
                     $("#mp3Wrapper").show();
                     $("#wavWrapper").hide();
+                    $("#flacWrapper").hide();
+                    $("#oggWrapper").hide();
+                } else if (typeVar == "ogg") {
+                    $("#oggWrapper").show();
+                    $("#wavWrapper").hide();
+                    $("#flacWrapper").hide();
+                    $("#mp3Wrapper").hide();
                 }
             });
             
@@ -73,6 +97,22 @@
                     $("#mp3WrapperMore").show();
                 }
             });
+            
+            $("#node-input-flacMore").on("change", function(){
+                if(!$("#node-input-flacMore").prop("checked")){
+                    $("#flacWrapperMore").hide();
+                } else {
+                    $("#flacWrapperMore").show();
+                }
+            });
+            
+            $("#node-input-oggMore").on("change", function(){
+                if(!$("#node-input-oggMore").prop("checked")){
+                    $("#oggWrapperMore").hide();
+                } else {
+                    $("#oggWrapperMore").show();
+                }
+            });
         }
     });
 </script>
@@ -81,8 +121,10 @@
     <div class="form-row">
         <label for="node-input-conversionType"></i>convert to</label>
         <select id="node-input-conversionType">
-            <option value="wav">wav</option> 
+            <option value="wav">wav</option>
+            <option value="flac">flac</option> 
             <option value="mp3">mp3</option>
+            <option value="ogg">ogg</option>
         </select>
     </div>
     <h4>Settings</h4>
@@ -120,13 +162,44 @@
                 <label for="node-input-wavBits"><i class="icon-tag"></i>bit-depth</label>
                 <input type="number" id="node-input-wavBits" value="16" />
             </div>
+            <br>
         </div> 
-    </div>   
+    </div>
+    <div id="flacWrapper">
+        <div class="form-row">
+            <label for="node-input-flacCompression"><i class="icon-tag"></i>compression</label>
+            <input type="number" id="node-input-flacCompression" value="8" />
+        </div>
+        <p>Compression is given as a whole number from from 0 (fastest / lowest compression) to 8 (slowest / most compression).</p>
+        <br>
+        <div class="form-row">
+            <label for="node-input-flacMore">advanced</i></label>
+            <input type="checkbox" id="node-input-flacMore" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
+            <label for="node-input-flacMore" style="width: 70%;">show more conversion options</label>
+        </div>
+        <div id="flacWrapperMore">
+            <div class="form-row">
+                <label for="node-input-flacChannels"><i class="icon-tag"></i>channels</label>
+                <input type="number" id="node-input-flacChannels" value="1" />
+            </div>
+            <div class="form-row">
+                <label for="node-input-flacRate"><i class="icon-tag"></i>sample-rate</label>
+                <input type="number" id="node-input-flacRate" value="16000" />
+            </div>
+            <div class="form-row">
+                <label for="node-input-flacBits"><i class="icon-tag"></i>bit-depth</label>
+                <input type="number" id="node-input-flacBits" value="16" />
+            </div>
+            <br>
+        </div> 
+    </div>  
     <div id="mp3Wrapper">
         <div class="form-row">
-            <label for="node-input-mp3BitRate"><i class="icon-tag"></i>bit-rate</label>
+            <label for="node-input-mp3BitRate"><i class="icon-tag"></i>bit-rate kbps</label>
             <input type="number" id="node-input-mp3BitRate" value="128" />
         </div>
+        <p>Mp3 conversion is only possible if you have an mp3 handler for sox installed.</p>
+        <br>
         <div class="form-row">
             <label for="node-input-mp3More">advanced</i></label>
             <input type="checkbox" id="node-input-mp3More" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
@@ -141,7 +214,37 @@
                 <label for="node-input-mp3Rate"><i class="icon-tag"></i>sample-rate</label>
                 <input type="number" id="node-input-mp3Rate" value="44100" />
             </div>
+            <br>
         </div>
+    </div>
+    <div id="oggWrapper">
+        <div class="form-row">
+            <label for="node-input-oggCompression"><i class="icon-tag"></i>compression / quality</label>
+            <input type="number" id="node-input-oggCompression" value="3" />
+        </div>
+        <p>Compression / Quality is given as a number from from -1 (highest compression / lowest quality) to 8 (lowest compression / highest quality). Decimal values are allowed.</p>
+        <br>
+        <div class="form-row">
+            <label for="node-input-oggMore">advanced</i></label>
+            <input type="checkbox" id="node-input-oggMore" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
+            <label for="node-input-oggMore" style="width: 70%;">show more conversion options</label>
+        </div>
+        <div id="oggWrapperMore">
+            <div class="form-row">
+                <label for="node-input-oggChannels"><i class="icon-tag"></i>channels</label>
+                <input type="number" id="node-input-mp3Channels" value="2" />
+            </div>
+            <div class="form-row">
+                <label for="node-input-oggRate"><i class="icon-tag"></i>sample-rate</label>
+                <input type="number" id="node-input-mp3Rate" value="44100" />
+            </div>
+            <br>
+        </div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-debugOutput"></i>debug</label>
+        <input type="checkbox" id="node-input-debugOutput" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
+        <label for="node-input-debugOutput" style="width: 70%;">detailed debug and playpack info</label>
     </div>
     <h4>Name</h4>
     <div class="form-row">
