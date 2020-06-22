@@ -36,6 +36,7 @@ module.exports = function(RED) {
         this.fileId = "";
         this.filePath = "";
         this.shm = true;
+        this.addN = 0;
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -89,6 +90,7 @@ module.exports = function(RED) {
             if (!node.debugOutput) { node.argArr.push('-q'); }
             node.argArr.push(queueItem.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
             spawnPlay();
+            if (node.queue.lenght === 0) { node.addN = 0; }
             return;
             
         }
@@ -157,6 +159,8 @@ module.exports = function(RED) {
         
         node.on('input', function(msg) {
             
+            if (node.startNew === "queue") { node.addN += 1; }
+            
             if (Buffer.isBuffer(msg.payload)) {
                 if (msg.payload.length === 0) { node.error("empty buffer"); node_status(["error","red","dot"],1500); return; }
                 const testBuffer = msg.payload.slice(0,8);
@@ -165,7 +169,7 @@ module.exports = function(RED) {
                     if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
                     testFormat = msg.format;
                 }
-                node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + "." + testFormat : "/tmp/" + node.fileId + "." + testFormat;
+                node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + node.addN + "." + testFormat : "/tmp/" + node.fileId + node.addN +"." + testFormat;
             }
             
             if (msg.payload === 'stop' && node.soxPlay) {
