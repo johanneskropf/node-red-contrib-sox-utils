@@ -17,6 +17,8 @@
         defaults: {
             name: {value:""},
             conversionType: {value:"wav", required:true},
+            outputToFile: {value:"buffer", required:true},
+            manualPath: {value:"", required:true},
             wavMore: {value:false, required:true},
             wavByteOrder: {value:"-L", required:true},
             wavEncoding: {value:"signed-integer", required:true},
@@ -60,25 +62,38 @@
             $("#node-input-conversionType").on("change", function(){
                 let typeVar = $("#node-input-conversionType").val();
                 if(typeVar == "wav"){
+                    $("#outputExt").text(".wav");
                     $("#wavWrapper").show();
                     $("#mp3Wrapper").hide();
                     $("#flacWrapper").hide();
                     $("#oggWrapper").hide();
                 } else if (typeVar == "flac") {
+                    $("#outputExt").text(".flac");
                     $("#flacWrapper").show();
                     $("#wavWrapper").hide();
                     $("#mp3Wrapper").hide();
                     $("#oggWrapper").hide();
                 } else if (typeVar == "mp3") {
+                    $("#outputExt").text(".mp3");
                     $("#mp3Wrapper").show();
                     $("#wavWrapper").hide();
                     $("#flacWrapper").hide();
                     $("#oggWrapper").hide();
                 } else if (typeVar == "ogg") {
+                    $("#outputExt").text(".ogg");
                     $("#oggWrapper").show();
                     $("#wavWrapper").hide();
                     $("#flacWrapper").hide();
                     $("#mp3Wrapper").hide();
+                }
+            });
+            
+            $("#node-input-outputToFile").on("change", function(){
+                let output = $("#node-input-outputToFile").val();
+                if(output == "buffer"){
+                    $("#outputPathWrapper").hide();
+                } else {
+                    $("#outputPathWrapper").show();
                 }
             });
             
@@ -126,6 +141,18 @@
             <option value="mp3">mp3</option>
             <option value="ogg">ogg</option>
         </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-outputToFile"></i>output as</label>
+        <select id="node-input-outputToFile">
+            <option value="buffer">a single buffer in the msg.payload</option>
+            <option value="file">a file on the local file system</option> 
+        </select>
+    </div>
+    <div id="outputPathWrapper" class="form-row" style="display:inline;">
+        <label for="node-input-manualPath"><i class="icon-tag"></i>output File</label>
+        <input type="text" id="node-input-manualPath" placeholder="" style="display:inline-block; width: 60%; vertical-align:baseline;">
+        <label for="node-input-manualPath" id="outputExt" style="width: 10%;">.wav</label>
     </div>
     <h4>Settings</h4>
     <div id="wavWrapper">

@@ -50,6 +50,8 @@ module.exports = function(RED) {
         this.filePath = "";
         this.inputFilePath = "";
         this.debugOutput = config.debugOutput;
+        this.outputToFile = config.outputToFile;
+        this.manualPath = config.manualPath;
         this.shm = true;
         var node = this;
         
@@ -121,12 +123,16 @@ module.exports = function(RED) {
             });
             
             node.soxConvert.on('close', function (code,signal) {
-                    
-                msg1.format = node.conversionType;
-                try {
-                    msg1.payload = fs.readFileSync(node.filePath);
-                } catch (error) {
-                    node.error("couldnt get tmp file after conversion");
+                
+                if (node.outputToFile === "buffer") {
+                    msg1.format = node.conversionType;
+                    try {
+                        msg1.payload = fs.readFileSync(node.filePath);
+                    } catch (error) {
+                        node.error("couldnt get tmp file after conversion");
+                    }
+                } else {
+                    msg1.payload = node.filePath;
                 }
                 node.send([msg1,null]);
                 node.send([null,{payload:"complete"}]);
@@ -149,7 +155,7 @@ module.exports = function(RED) {
         
         if (!fs.existsSync('/dev/shm')) { node.shm = false; }
         
-        if (node.outputToFile) {
+        if (node.outputToFile === "file") {
             node.filePath = node.manualPath;
         } else {
             node.filePath = (node.shm) ? "/dev/shm/" + node.fileId : "/tmp/" + node.fileId;
