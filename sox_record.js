@@ -41,6 +41,7 @@ module.exports = function(RED) {
         this.silenceThreshold = config.silenceThreshold;
         this.silenceDuration = config.silenceDuration;
         this.outputFormat = config.outputFormat;
+        this.manualPath = config.manualPath;
         this.debugOutput = config.debugOutput;
         this.fileId = "";
         this.filePath = "";
@@ -118,7 +119,7 @@ module.exports = function(RED) {
             
         }
         
-        function spawnRecord(){
+        node.spawnRecord = function (){
         
             let msg1 = {};
             let msg2 = {};
@@ -148,18 +149,17 @@ module.exports = function(RED) {
             node.soxRecord.on('close', function (code,signal) {
                 
                 if (node.outputFormat == "once" || node.outputFormat == "wav") {
-                    
                     node.outputBuffer = Buffer.concat(node.outputBufferArr);
-                    node.outputBufferArr = [];
-                    msg1.payload = node.outputBuffer;
-                    if (node.outputFormat == "wav") {
-                        
+                    node.outputBufferArr = [];    
+                }
+                
+                switch (node.outputFormat) {
+                    case "wav":
                         if (node.shm) {
                             node.filePath = "/dev/shm/tmp" + node.fileId + ".raw";
                         } else {
                             node.filePath = "/tmp/tmp" + node.fileId + ".raw";
                         }
-                        
                         try {
                             fs.writeFileSync(node.filePath,node.outputBuffer);
                         }
@@ -167,14 +167,18 @@ module.exports = function(RED) {
                             node.error("error saving tmp file" + err.message);
                         }
                         makeWav();
+                        break;
                         
-                    } else {
-                        
+                    case "once":
+                        msg1.payload = node.outputBuffer;
                         msg1.format = "raw";
                         node.send([msg1,null]);
-                    
-                    }
-                
+                        break;
+                        
+                    case "file":
+                        msg1.payload = node.manualPath;
+                        node.send([msg1,null]);
+                        break;
                 }
                 
                 node.send([null,{payload:"complete"}]);
@@ -186,6 +190,7 @@ module.exports = function(RED) {
             
             node.soxRecord.stdout.on('data', (data)=>{
                 
+                if (node.outputFormat === "file") { return; } 
                 if (node.outputFormat !== "stream") {
                     node.outputBufferArr.push(data);
                 } else {
@@ -202,28 +207,26 @@ module.exports = function(RED) {
         
         node.fileId = node.id.replace(/\./g,"");
         
+        if (node.manualPath.length !== 0) {
+            node.manualPath.trim();
+            node.manualPath += ".wav";
+        }
+        
         if (!fs.existsSync('/dev/shm')) { node.shm = false; }
         
-        if (node.debugOutput) {
-            node.argArr.push("-t");
-        } else {
-            node.argArr.push("-q","-t");
-        }
+        (node.debugOutput) ? node.argArr.push("-t") : node.argArr.push("-q","-t");
         
-        if (node.inputSourceRaw === 'default') {
-            node.inputSource = node.inputSourceRaw;
-        } else {
-            node.inputSource += node.inputSourceRaw.toString();
-        }    
-        node.inputSourceArr = ["alsa",node.inputSource];
-        node.argArr = node.argArr.concat(node.inputSourceArr);
+        node.inputSource = (node.inputSourceRaw === 'default') ? node.inputSourceRaw : node.inputSource += node.inputSourceRaw.toString();
+           
+        node.argArr.push("alsa",node.inputSource);
+        
+        (node.outputFormat === "file") ?
+        node.argArr.push(node.byteOrder,"-e",node.encoding,"-c",node.channels,"-r",node.rate,"-b",node.bits,node.manualPath) :
         node.argArr.push(node.byteOrder,"-e",node.encoding,"-c",node.channels,"-r",node.rate,"-b",node.bits,"-t","raw","-");
-        if (node.silenceDetection == "something") {
-            node.argArr.push("silence","-l","0","1",node.silenceDuration,node.silenceThreshold + "%");
-        }
-        if (node.durationType == "limited") {
-            node.argArr.push("trim","0",node.durationLength);
-        }
+        
+        if (node.silenceDetection == "something") { node.argArr.push("silence","-l","0","1",node.silenceDuration,node.silenceThreshold + "%"); }
+        
+        if (node.durationType == "limited") { node.argArr.push("trim","0",node.durationLength); }
         node.argArr.push("gain",node.gain);
         
         node.on('input', function(msg) {
@@ -233,7 +236,7 @@ module.exports = function(RED) {
                 case "start":
                     
                     if(!node.soxRecord){
-                        spawnRecord();
+                        node.spawnRecord();
                         node.send([null,{payload:"starting"}]);
                     } else {
                         node.warn("already recording");
@@ -300,5 +303,28 @@ module.exports = function(RED) {
                 res.json(deviceArr);
             }
         });
+    });
+    
+    RED.httpAdmin.post("/soxRecord/:id/record", RED.auth.needsPermission('sox-record.write'), function(req,res) {
+        
+        var node = RED.nodes.getNode(req.params.id)
+        
+        if (node != null) {
+            try {
+                if(!node.soxRecord){
+                    node.spawnRecord();
+                    node.send([null,{payload:"starting"}]);
+                    res.sendStatus(202);
+                } else {
+                    node.soxRecord.kill("SIGINT");
+                    res.sendStatus(200);
+                }
+            } catch(err) {
+                res.sendStatus(500);
+            }
+        } else {
+            res.sendStatus(404);
+        }
+        
     });
 }

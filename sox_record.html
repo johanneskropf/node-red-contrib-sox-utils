@@ -31,7 +31,8 @@
             silenceDuration: {value:"2.0", required:true},
             silenceThreshold: {value:"2.0", required:true},
             outputFormat: {value:"stream", required:true},
-            debugOutput: {value:false, required:true}
+            manualPath: {value:""},
+            debugOutput: {value:false, required:true},
         },
         inputs:1,
         outputs:2,
@@ -94,7 +95,46 @@
                     $("#durationOptionWrapper").show();
                 }
             });
-        
+            
+            $("#node-input-outputFormat").on("change", function(){
+                let output = $("#node-input-outputFormat").val();
+                if(output == "file"){
+                    $("#outputPathWrapper").show();
+                } else {
+                    $("#outputPathWrapper").hide();
+                }
+            });
+        },
+        button: {
+            enabled: function() {
+                return !this.changed
+            },
+            onclick: function() {
+                var node = this;
+                var label = this.name||"sox-record";
+                $.ajax({
+                    url: "soxRecord/"+this.id+"/record",
+                    type:"POST",
+                    success: function(resp, textStatus, xhr) {
+                        if (xhr.status == 202) {
+                            RED.notify(node._("started recording",{label:label}),"success");
+                        } else if (xhr.status == 200) {
+                            RED.notify(node._("stopped recording",{label:label}),"success");
+                        }
+                    },
+                    error: function(jqXHR,textStatus,errorThrown) {
+                        if (jqXHR.status == 404) {
+                            RED.notify(node._("common.notification.error",{message:node._("common.notification.errors.not-deployed")}),"error");
+                        } else if (jqXHR.status == 500) {
+                            RED.notify(node._("common.notification.error",{message:node._("inject.errors.failed")}),"error");
+                        } else if (jqXHR.status == 0) {
+                            RED.notify(node._("common.notification.error",{message:node._("common.notification.errors.no-response")}),"error");
+                        } else {
+                            RED.notify(node._("common.notification.error",{message:node._("common.notification.errors.unexpected",{status:jqXHR.status,message:textStatus})}),"error");
+                        }
+                    }
+                });
+            }
         }
     });
 </script>
@@ -180,7 +220,16 @@
             <option value="stream">a stream of raw buffers while recording</option> 
             <option value="once">a single raw buffer when recording ends</option>
             <option value="wav">a single wav buffer when recording ends</option>
+            <option value="file">write recorded audio to wav file</option>
         </select>
+    </div>
+    <div id="outputPathWrapper">
+        <div class="form-row">
+            <label for="node-input-manualPath"><i class="icon-tag"></i>output File</label>
+            <input type="text" id="node-input-manualPath" placeholder="" style="display:inline-block; width: 60%; vertical-align:baseline;">
+            <label for="node-input-manualPath" id="outputExt" style="width: 10%;">.wav</label>
+        </div>
+        <br>
     </div>
     <div class="form-row">
         <label for="node-input-debugOutput"></i>debug</label>
