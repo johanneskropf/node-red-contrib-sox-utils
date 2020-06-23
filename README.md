@@ -24,11 +24,11 @@ If you want to play or convert to/from mp3 files you need to install a mp3 handl
 
 ## Record Node
 
-The node starts recording with the specified settings from the choosen source when it receives a `msg.payload` with the content of `start`.
-To stop recording at any time send a `msg.payload` of `stop`.
+The node starts recording with the specified settings from the choosen source when the button on the left side of the node is pressed. Press again to stop. Altenatively it can receive a `msg.payload` with the content of `start` or `stop` to start or stop recording at any time.
 
 The node has two outputs.
-All audio data will be send to the first output in form of audio buffers. You can specify in the node settings if the node should send a stream of raw buffers while recording or either a single raw buffer or a single wav buffer when the recording finished or was stopped.
+All audio data will be send to the first output in form of audio buffers (or the file name of the recorded audio when in file mode). You can specify in the node settings if the node should send a stream of raw buffers while recording or either a single raw buffer or a single wav buffer when the recording finished or was stopped.
+It can also write the recording to a specified file path as a wav file. Please enter the path and name of your file but **not the extension** as this gets auto added!
 On the second output you will receive a `msg.payload` of `starting` when the recording starts and `complete` when finished. You will also receive any errors or warnings of the sox process that may occur.
 If you select the option for detailed debug output you will also receive detailed recording progress info from the sox process while recording.
 
@@ -42,7 +42,7 @@ In both single buffer modes the record node will also attach a `msg.format` to t
 
 ## Play Node
 
-The play node will play an audio file which was send to the node as either a string containing a path to an audio file in the `msg.payload` or as a single buffer containing the audio data in the `msg.payload`. If you want to play audio directly from a buffer you have include a `msg.format` property in the msg object that has the buffer in the `msg.payload`. This `format` property has to state the audio format of the buffer in form of a legal audio file extension readable by sox (eg. wav, mp3, ogg, flac...) as sox otherwise cant know which format the audio input was in. It will try to play the audio on the selected output from the nodes menu. If you select the detailed info option it will send detailed playback progress and information to the output. When finished it will always send a `msg.payload` of `complete`.
+The play node will play an audio file which was send to the node as either a string containing a path to an audio file in the `msg.payload` or as a single buffer containing the audio data in the `msg.payload`. If you want to play audio directly from a buffer the node will try to "guess" the file format (it can do this for wav, flac, mp3 and ogg currently). Should this not work include a `msg.format` property in the msg object that has the buffer in the `msg.payload`. This `format` property has to than state the audio format of the buffer in form of a legal audio file extension readable by sox (eg. dat, aiff, vorbis...) as sox otherwise cant know which format the audio input was in. It will try to play the audio on the selected output from the nodes menu. If you select the detailed info option it will send detailed playback progress and information to the output. When finished it will always send a `msg.payload` of `complete`.
 You can stop playback at anytime with a `msg.payload` of `stop`.
 
 The node can behave in different ways when a new input arrives while a playback is in progress. The behavior can be set in the nodes options. You can choose if it should either ignore the new input, stop the current playback and replace it with the new input or add new input to a queue.
@@ -50,10 +50,14 @@ If the queue mode is selected the node will also accept a `msg.payload` of `clea
 
 ## Convert Node
 
-The convert node will convert an audio file which was send to the node as either a string containing a path to an audio file in the `msg.payload` or as a single buffer containing the audio data in the `msg.payload`. If you want to convert audio directly from a buffer you have include a `msg.format` property in the msg object that has the buffer in the `msg.payload`. This `format` property has to state the audio format of the buffer in form of a legal audio file extension readable by sox (eg. wav, mp3, ogg, flac...) as sox otherwise cant know which format the audio input was in.
+The convert node will convert an audio file which was send to the node as either a string containing a path to an audio file in the `msg.payload` or as a single buffer containing the audio data in the `msg.payload`. If you want to convert audio directly from a buffer it will try to "guess" the input format similar to the play node. Otherwise you also have to include a `msg.format` property in the msg object that has the buffer in the `msg.payload` that states the buffers audio format as explained in the play node section.
 
-You can choose to which audio format the input should be converted from the nodes config. By default the converted audio will inherit the applicable parameters from the input. You can change this behaviour by checking the advanced settings check box which will give you more options how the audio should be converted.
+You can choose to which audio format the input should be converted to from the nodes config. By default the converted audio will inherit the applicable parameters from the input. You can change this behaviour by checking the advanced settings check box which will give you more options how the audio should be converted.
 
-The node will output the converted audio as a single binary buffer in the `msg.payload`. The format the audio was converted to will be passed in `msg.format` of the same msg object. You can save those buffers directly to files with the extension from `msg.format` using the file node. You can also connect it directly to the play node.
+The node will output the converted audio as a single binary buffer in the `msg.payload` or directly to a file in which case it will send the file name and path as a `msg.payload` to the first output.  The format the audio was converted to will be passed in `msg.format` if in buffer mode. You can save those buffers directly to files with the extension from `msg.format` using the file node. You can also connect it directly to the play node in either mode. If in file mode please enter the path and name of your file but **not the extension** as this gets auto added!
 
-If you check the box for detailed debug and conversion info you will receive detailed output from sox about the conversion and input/output formats on the second output of the node. You will always receive a `msg.payload` of `complete` when the conversion was finished. 
+If you check the box for detailed debug and conversion info you will receive detailed output from sox about the conversion and input/output formats on the second output of the node. You will always receive a `msg.payload` of `complete` when the conversion was finished on this second output.
+
+# Additional Information
+
+As the nodes try to do as much as possible in memory by using buffers or writing tmp files to /dev/shm you would need a lot of ram or change the size of /dev/shm to deal with very large or very many files. If you plan to record long pieces of high quality audio or play very large audio files please use the file based input/output that all nodes in this suite include as an option. This way sox will read and write the data directly from and to your filesystem which in that occasion is preferable. 
