@@ -207,7 +207,7 @@ module.exports = function(RED) {
         
         node.fileId = node.id.replace(/\./g,"");
         
-        if (node.manualPath.length !== 0) {
+        if (node.manualPath) {
             node.manualPath.trim();
             node.manualPath += ".wav";
         }
