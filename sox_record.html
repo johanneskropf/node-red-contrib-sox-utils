@@ -16,6 +16,8 @@
         color: '#c28285',
         defaults: {
             name: {value:""},
+            buttonStart: {value:"msg", requiered:true},
+            inputs: {value:1},
             inputSource: {value:"default", required:true},
             byteOrder: {value:"-L", required:true},
             encoding: {value:"signed-integer", required:true},
@@ -106,10 +108,24 @@
                     $("#outputPathWrapper").hide();
                 }
             });
+            
+            
+            $("#node-input-buttonStart").on("change", function(){
+                let value = $("#node-input-buttonStart").val();
+                if(value === "msg"){
+                    node.inputs = 1;
+                } else {
+                    node.inputs = 0;
+                }
+            });
         },
         button: {
             enabled: function() {
                 return !this.changed
+            },
+            visible: function() {
+                let show = (this.buttonStart === "msg") ? false : true;
+                return show;
             },
             onclick: function() {
                 var node = this;
@@ -147,6 +163,13 @@
         <label for="node-input-inputSource"></i>input device</label>
         <select id="node-input-inputSource">
             <option value="default">default device</option> 
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-buttonStart"></i>start/stop</label>
+        <select id="node-input-buttonStart">
+            <option value="msg">control with msg.payload</option> 
+            <option value="button">control with button on node</option>
         </select>
     </div>
     <h4>Settings</h4>
