@@ -140,7 +140,6 @@ module.exports = function(RED) {
                 node_status(["finished","green","dot"],1500);
                 delete node.soxConvert;
                 return;
-                
             });
             
             node.soxConvert.stdout.on('data', (data)=>{
@@ -207,18 +206,14 @@ module.exports = function(RED) {
             node.inputFilePath = "";
             
             if (Buffer.isBuffer(msg.payload)) {
-                
-                if (msg.payload.length === 0) { node.error("empty buffer"); node_status(["error","red","dot"],1500); return; }
-                if (Buffer.isBuffer(msg.payload)) {
-                    if (msg.payload.length === 0) { node.error("empty buffer"); node_status(["error","red","dot"],1500); return; }
-                    const testBuffer = msg.payload.slice(0,8);
-                    let testFormat = guessFormat(testBuffer);
-                    if (!testFormat) {
-                        if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
-                        testFormat = msg.format;
-                    }
-                    node.inputFilePath = (node.shm) ? "/dev/shm/" + node.fileId + "input." + testFormat : "/tmp/" + node.fileId + "input." + testFormat;
+                if (msg.payload.length === 0) { node_status(["error","red","dot"],1500); node.error("empty buffer"); return; }
+                const testBuffer = msg.payload.slice(0,8);
+                let testFormat = guessFormat(testBuffer);
+                if (!testFormat) {
+                    if (!msg.hasOwnProperty("format")) { node_status(["error","red","dot"],1500); node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); return; }
+                    testFormat = msg.format;
                 }
+                node.inputFilePath = (node.shm) ? "/dev/shm/" + node.fileId + "input." + testFormat : "/tmp/" + node.fileId + "input." + testFormat;
                 try {
                     fs.writeFileSync(node.inputFilePath, msg.payload);
                 } catch (error) {
@@ -231,8 +226,6 @@ module.exports = function(RED) {
                 node.inputFilePath = msg.payload;
                 
             }
-            
-            if (node.inputFilePath.length === 0) { node.error("not a valid input"); node_status(["error","red","dot"],1500); return; }
             
             node.argArr1 = [];
             if (node.debugOutput) { node.argArr1.push("-V3"); }
