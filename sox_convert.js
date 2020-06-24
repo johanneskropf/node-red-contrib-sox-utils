@@ -87,6 +87,7 @@ module.exports = function(RED) {
         function guessFormat(input){
             
             const formats = [
+                [["aiff"],[0x46,0x4F,0x52,0x4D,0x00]],
                 [["wav"],[0x52,0x49,0x46,0x46]],
                 [["flac"],[0x66,0x4C,0x61,0x43]],
                 [["ogg"],[0x4F,0x67,0x67,0x53,0x00,0x02,0x00,0x00]],
@@ -216,7 +217,7 @@ module.exports = function(RED) {
                         if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
                         testFormat = msg.format;
                     }
-                    node.inputFilePath = (node.shm) ? "/dev/shm/" + node.fileId + "." + testFormat : "/tmp/" + node.fileId + "." + testFormat;
+                    node.inputFilePath = (node.shm) ? "/dev/shm/" + node.fileId + "input." + testFormat : "/tmp/" + node.fileId + "input." + testFormat;
                 }
                 try {
                     fs.writeFileSync(node.inputFilePath, msg.payload);
