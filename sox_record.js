@@ -207,7 +207,10 @@ module.exports = function(RED) {
         
         node.fileId = node.id.replace(/\./g,"");
         
-        if (node.manualPath) {
+        if(node.outputFormat === "file" && node.manualPath.length === 0) {
+            node.error("did you forget to enter a file path?");
+            node_status(["file path error","red","dot"]);
+        } else {
             node.manualPath.trim();
             node.manualPath += ".wav";
         }
