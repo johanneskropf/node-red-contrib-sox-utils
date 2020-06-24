@@ -210,7 +210,7 @@ module.exports = function(RED) {
         if(node.outputFormat === "file" && node.manualPath.length === 0) {
             node.error("did you forget to enter a file path?");
             node_status(["file path error","red","dot"]);
-        } else {
+        } else if (node.outputFormat === "file") {
             node.manualPath.trim();
             node.manualPath += ".wav";
         }
