@@ -133,6 +133,7 @@ module.exports = function(RED) {
                         (done) ? done("couldnt get tmp file after conversion") : node.error("couldnt get tmp file after conversion");
                     }
                 } else {
+                    msg.format = node.conversionType;
                     msg.payload = node.filePath;
                 }
                 (send) ? send([msg,null]) : node.send([msg,null]);
