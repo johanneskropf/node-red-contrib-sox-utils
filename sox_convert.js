@@ -53,6 +53,7 @@ module.exports = function(RED) {
         this.outputToFile = config.outputToFile;
         this.manualPath = config.manualPath;
         this.shm = true;
+        this.checkPath = true;
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -100,9 +101,8 @@ module.exports = function(RED) {
             
         }
         
-        function spawnConvert(){
+        function spawnConvert(msg, send, done){
         
-            let msg1 = {};
             let msg2 = {};
             
             try{
@@ -110,7 +110,7 @@ module.exports = function(RED) {
             } 
             catch (error) {
                 node_status(["error starting conversion command","red","ring"],1500);
-                node.error(error);
+                (done) ? done(error) : node.error(error);
                 return;
             }
             
@@ -119,26 +119,27 @@ module.exports = function(RED) {
             node.soxConvert.stderr.on('data', (data)=>{
             
                 msg2.payload = data.toString();
-                node.send([null,msg2]);
+                (send) ? send([null,msg2]) : node.send([null,msg2]);
                 
             });
             
             node.soxConvert.on('close', function (code,signal) {
                 
                 if (node.outputToFile === "buffer") {
-                    msg1.format = node.conversionType;
+                    msg.format = node.conversionType;
                     try {
-                        msg1.payload = fs.readFileSync(node.filePath);
+                        msg.payload = fs.readFileSync(node.filePath);
                     } catch (error) {
-                        node.error("couldnt get tmp file after conversion");
+                        (done) ? done("couldnt get tmp file after conversion") : node.error("couldnt get tmp file after conversion");
                     }
                 } else {
-                    msg1.payload = node.filePath;
+                    msg.payload = node.filePath;
                 }
-                node.send([msg1,null]);
-                node.send([null,{payload:"complete"}]);
+                (send) ? send([msg,null]) : node.send([msg,null]);
+                (send) ? send([null,{payload:"complete"}]) : node.send([null,{payload:"complete"}]);
                 node_status(["finished","green","dot"],1500);
                 delete node.soxConvert;
+                if (done) { done(); }
                 return;
             });
             
@@ -155,7 +156,11 @@ module.exports = function(RED) {
         
         if (!fs.existsSync('/dev/shm')) { node.shm = false; }
         
-        if (node.outputToFile === "file") {
+        if (node.outputToFile === "file" && !node.manualPath) {
+            node.error("did you forget to enter a file path? bing bing");
+            node_status(["file path error","red","dot"]);
+            node.checkPath = false;
+        } else if (node.outputToFile === "file") {
             node.filePath = node.manualPath;
         } else {
             node.filePath = (node.shm) ? "/dev/shm/" + node.fileId : "/tmp/" + node.fileId;
@@ -199,30 +204,51 @@ module.exports = function(RED) {
                 break;
         }
         
-        node.on('input', function(msg) {
+        node.on('input', function(msg, send, done) {
             
-            if (node.soxConvert) { node.warn("already converting, ignoring new input"); return; }
+            if (node.soxConvert) {
+                node.warn("already converting, ignoring new input");
+                if (done) { done(); }
+                return;
+            }
+            
+            if (!node.checkPath) {
+                (done) ? done("no file path") : node.error("no file path");
+                return;
+            }
             
             node.inputFilePath = "";
             
             if (Buffer.isBuffer(msg.payload)) {
-                if (msg.payload.length === 0) { node_status(["error","red","dot"],1500); node.error("empty buffer"); return; }
+                if (msg.payload.length === 0) {
+                    node_status(["error","red","dot"],1500);
+                    (done) ? done("empty buffer") : node.error("empty buffer");
+                    return;
+                }
                 const testBuffer = msg.payload.slice(0,8);
                 let testFormat = guessFormat(testBuffer);
                 if (!testFormat) {
-                    if (!msg.hasOwnProperty("format")) { node_status(["error","red","dot"],1500); node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); return; }
+                    if (!msg.hasOwnProperty("format")) {
+                        node_status(["error","red","dot"],1500);
+                        (done) ? done("msg with a buffer payload also needs to have a coresponding msg.format property") : node.error("msg with a buffer payload also needs to have a coresponding msg.format property");
+                        return;
+                    }
                     testFormat = msg.format;
                 }
                 node.inputFilePath = (node.shm) ? "/dev/shm/" + node.fileId + "input." + testFormat : "/tmp/" + node.fileId + "input." + testFormat;
                 try {
                     fs.writeFileSync(node.inputFilePath, msg.payload);
                 } catch (error) {
-                    node.error("couldnt write tmp file");
+                    (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
                     node_status(["error","red","dot"],1500)
                 }
                 
             } else if (typeof msg.payload === "string") {
-                if (!fs.existsSync(msg.payload)) { node.error("this file doesnt exist"); node_status(["error","red","dot"],1500); return; }
+                if (!fs.existsSync(msg.payload)) {
+                    (done) ? done("this file doesnt exist") : node.error("this file doesnt exist");
+                    node_status(["error","red","dot"],1500);
+                    return;
+                }
                 node.inputFilePath = msg.payload;
                 
             }
@@ -232,7 +258,7 @@ module.exports = function(RED) {
             node.argArr1.push(node.inputFilePath);
             node.argArr = node.argArr1.concat(node.argArr2);
                     
-            spawnConvert();
+            spawnConvert(msg, send, done);
             
         });
         

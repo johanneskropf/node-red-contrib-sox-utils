@@ -37,6 +37,7 @@ module.exports = function(RED) {
         this.filePath = "";
         this.shm = true;
         this.addN = 0;
+        this.lastMsg = {};
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -115,13 +116,15 @@ module.exports = function(RED) {
             
             node.soxPlay.stderr.on('data', (data)=>{
             
-                node.send({payload:data.toString()});
+                node.lastMsg.payload = data.toString();
+                node.send(node.lastMsg);
                 
             });
             
             node.soxPlay.on('close', function (code,signal) {
                 
-                node.send({payload:"complete"});
+                node.lastMsg.payload = "complete";
+                node.send(node.lastMsg);
                 node_status(["finished","green","dot"],1500);
                 delete node.soxPlay;
                 if (node.queue.length !== 0) {
@@ -158,16 +161,26 @@ module.exports = function(RED) {
         
         if (!node.debugOutput) { node.argArr.push('-q'); }
         
-        node.on('input', function(msg) {
+        node.on('input', function(msg, send, done) {
+            
+            node.lastMsg = msg;
             
             if (node.startNew === "queue") { node.addN += 1; }
             
             if (Buffer.isBuffer(msg.payload)) {
-                if (msg.payload.length === 0) { node.error("empty buffer"); node_status(["error","red","dot"],1500); return; }
+                if (msg.payload.length === 0) {
+                    (done) ? done("empty buffer") : node.error("empty buffer");
+                    node_status(["error","red","dot"],1500);
+                    return;
+                }
                 const testBuffer = msg.payload.slice(0,8);
                 let testFormat = guessFormat(testBuffer);
                 if (!testFormat) {
-                    if (!msg.hasOwnProperty("format")) { node.error("msg with a buffer payload also needs to have a coresponding msg.format property"); node_status(["error","red","dot"],1500); return; }
+                    if (!msg.hasOwnProperty("format")) {
+                        (done) ? done("msg with a buffer payload also needs to have a coresponding msg.format property") : node.error("msg with a buffer payload also needs to have a coresponding msg.format property");
+                        node_status(["error","red","dot"],1500);
+                        return;
+                    }
                     testFormat = msg.format;
                 }
                 node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + node.addN + "." + testFormat : "/tmp/" + node.fileId + node.addN +"." + testFormat;
@@ -180,7 +193,8 @@ module.exports = function(RED) {
                 node.warn('not playing');
             } else if (msg.payload === 'clear' && node.queue.length !== 0) {
                 node.queue = [];
-                node.send({payload:'queue cleared'});
+                msg.payload = 'queue cleared';
+                (send) ? send(msg) : node.send(msg);
                 node_status(["playing","blue","dot"]);
             } else if (msg.payload === 'clear' && node.queue.length === 0) {
                 node.warn('queue is already empty');
@@ -195,7 +209,8 @@ module.exports = function(RED) {
                 try {
                     fs.writeFileSync(node.filePath, msg.payload);
                 } catch (error) {
-                    node.error("couldnt write tmp file");
+                    (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
+                    return;
                 }
                 node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'gain',node.gain);
                 spawnPlay();
@@ -208,7 +223,8 @@ module.exports = function(RED) {
                     try {
                         fs.writeFileSync(node.filePath, msg.payload);
                     } catch (error) {
-                        node.error("couldnt write tmp file");
+                        (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
+                        return;
                     }
                     node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'gain',node.gain);
                 }
@@ -220,22 +236,26 @@ module.exports = function(RED) {
                     try {
                         fs.writeFileSync(node.filePath, msg.payload);
                     } catch (error) {
-                        node.error("couldnt write tmp file");
+                        (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
+                        return;
                     }
                     node.queue.push(node.filePath);
                 } else {
                     node.queue.push(msg.payload);
                 }
                 if (node.queue.length === 1) {
-                    node.send({payload:'added to queue. There is now ' + node.queue.length + ' file in the queue.' })
+                    msg.payload = 'added to queue. There is now ' + node.queue.length + ' file in the queue.';
+                    (send) ? send(msg) : node.send(msg)
                 } else {
-                    node.send({payload:'added to queue. There is now ' + node.queue.length + ' files in the queue.' })
+                    msg.payload = 'added to queue. There is now ' + node.queue.length + ' files in the queue.';
+                    (send) ? send(msg) : node.send(msg)
                 }
                 node_status(["playing | " + node.queue.length + " in queue","blue","dot"]);
             } else {
                 node.warn('ignoring input as there is already a playback in progress');
             }
-            
+            if (done) { done(); }
+            return;
         });
         
         node.on("close",function() {

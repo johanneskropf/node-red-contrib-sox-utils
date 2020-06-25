@@ -46,6 +46,7 @@ module.exports = function(RED) {
         this.fileId = "";
         this.filePath = "";
         this.shm = true;
+        this.checkPath = true;
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -77,9 +78,8 @@ module.exports = function(RED) {
             
         }
         
-        function makeWav(){
+        function makeWav(msg, send, done){
             
-            let msg1 = {};
             let msg2 = {};
             let wavOutputBufferArr = [];
             let wavOutputBuffer = [];
@@ -88,23 +88,24 @@ module.exports = function(RED) {
                 node.soxWav = spawn("sox",[node.byteOrder,"-e",node.encoding,"-c",node.channels,"-r",node.rate,"-b",node.bits,"-t","raw",node.filePath,"-t","wav","-"]);
             } 
             catch (error) {
-                node.error(error);
+                (done) ? done(error) : node.error(error);
                 return;
             }
             
             node.soxWav.stderr.on('data', (data)=>{
             
                 msg2.payload = data.toString();
-                node.send([null,msg2]);
+                (send) ? send([null,msg2]) : node.send([null,msg2]);
                 
             });
             
             node.soxWav.on('close', function (code,signal) {
                 
                 wavOutputBuffer = Buffer.concat(wavOutputBufferArr);
-                msg1.payload = wavOutputBuffer;
-                msg1.format = "wav";
-                node.send([msg1,null]);
+                msg.payload = wavOutputBuffer;
+                msg.format = "wav";
+                (send) ? send([msg,null]) : node.send([msg,null]);
+                if (done) { done(); }
                 delete node.soxWav;
                 return;
                 
@@ -119,9 +120,8 @@ module.exports = function(RED) {
             
         }
         
-        node.spawnRecord = function (){
+        node.spawnRecord = function(msg, send, done) {
         
-            let msg1 = {};
             let msg2 = {};
             
             try{
@@ -129,7 +129,7 @@ module.exports = function(RED) {
             } 
             catch (error) {
                 node_status(["error starting record command","red","ring"],1500);
-                node.error(error);
+                (done) ? done(error) : node.error(error);
                 return;
             }
             
@@ -142,7 +142,7 @@ module.exports = function(RED) {
             node.soxRecord.stderr.on('data', (data)=>{
             
                 msg2.payload = data.toString();
-                node.send([null,msg2]);
+                (send) ? send([null,msg2]) : node.send([null,msg2]);
                 
             });
             
@@ -164,26 +164,28 @@ module.exports = function(RED) {
                             fs.writeFileSync(node.filePath,node.outputBuffer);
                         }
                         catch (error){
-                            node.error("error saving tmp file" + err.message);
+                            (done) ? done("error saving tmp file" + err.message) : node.error("error saving tmp file" + err.message)
+                            return;
                         }
-                        makeWav();
+                        (node.silenceDetection === "nothing" && node.durationType === "forever") ? makeWav(msg) : makeWav(msg, send, done);
                         break;
                         
                     case "once":
-                        msg1.payload = node.outputBuffer;
-                        msg1.format = "raw";
-                        node.send([msg1,null]);
+                        msg.payload = node.outputBuffer;
+                        msg.format = "raw";
+                        (send) ? send([msg,null]) : node.send([msg,null]);
                         break;
                         
                     case "file":
-                        msg1.payload = node.manualPath;
-                        node.send([msg1,null]);
+                        msg.payload = node.manualPath;
+                        (send) ? send([msg,null]) : node.send([msg,null]);
                         break;
                 }
                 
-                node.send([null,{payload:"complete"}]);
+                (send) ? send([null,{payload:"complete"}]) : node.send([null,{payload:"complete"}]);
                 node_status(["finished","green","dot"],1500);
                 delete node.soxRecord;
+                if (done && node.outputFormat !== "wav") { done(); }
                 return;
                 
             });
@@ -194,8 +196,7 @@ module.exports = function(RED) {
                 if (node.outputFormat !== "stream") {
                     node.outputBufferArr.push(data);
                 } else {
-                    msg1.payload = data;
-                    node.send([msg1,null]);    
+                    (send) ? send([{payload:data},null]) : node.send([{payload:data},null]);  
                 }
                 
             });
@@ -210,6 +211,7 @@ module.exports = function(RED) {
         if(node.outputFormat === "file" && node.manualPath.length === 0) {
             node.error("did you forget to enter a file path?");
             node_status(["file path error","red","dot"]);
+            node.checkPath = false;
         } else if (node.outputFormat === "file") {
             node.manualPath.trim();
             node.manualPath += ".wav";
@@ -232,19 +234,24 @@ module.exports = function(RED) {
         if (node.durationType == "limited") { node.argArr.push("trim","0",node.durationLength); }
         node.argArr.push("gain",node.gain);
         
-        node.on('input', function(msg) {
+        node.on('input', function(msg, send, done) {
+            
+            if (!node.checkPath) {
+                (done) ? done("no file path") : node.error("no file path");
+                return;
+            }
             
             switch(msg.payload){
             
                 case "start":
                     
                     if(!node.soxRecord){
-                        node.spawnRecord();
-                        node.send([null,{payload:"starting"}]);
+                        (node.silenceDetection === "nothing" && node.durationType === "forever") ? node.spawnRecord(msg) : node.spawnRecord(msg, send, done);
+                        (send) ? send([null,{payload:"starting"}]) : node.send([null,{payload:"starting"}]);
                     } else {
                         node.warn("already recording");
                     }
-                    return;
+                    break;
                     
                 case "stop":
                     
@@ -253,9 +260,11 @@ module.exports = function(RED) {
                     } else {
                         node.warn("not recording right now");
                     }
-                    return;
+                    break;
                     
             }
+            if (done && node.silenceDetection === "nothing" && node.durationType === "forever") { done(); }
+            return;
             
         });
         
@@ -315,11 +324,14 @@ module.exports = function(RED) {
         if (node != null) {
             try {
                 if(!node.soxRecord){
-                    node.spawnRecord();
+                    msg = {};
+                    node.spawnRecord(msg);
                     node.send([null,{payload:"starting"}]);
+                    //node.receive({payload:"start"});
                     res.sendStatus(202);
                 } else {
                     node.soxRecord.kill("SIGINT");
+                    //node.receive({payload:"stop"});
                     res.sendStatus(200);
                 }
             } catch(err) {
