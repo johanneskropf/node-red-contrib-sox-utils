@@ -79,7 +79,9 @@
 </script>
 
 <script type="text/html" data-help-name="sox-play">
-    <p><strong>A simple wrapper node around the play functionality of the sox commandline utility.</strong></p>
-    <p>The node will play audio on the machine node-red runs on to the choosen output device from either a wav buffer send to it in the <code>msg.payload</code> or a path to an audio file as a string in the <code>msg.payload</code>. It will output playback information and any debug info in the <code>msg.payload</code> to its output. You can stop the playback at anytime with a <code>msg.payload</code> of <strong>stop</strong>. When playing in queue mode and there is items in the queue the node also accepts a <code>msg.payload</code> of <strong>clear</strong> to clear the queue or <strong>next</strong> to skip to the next item in the queue. When stopped the queue will be automatically cleared.</p>
+    <p><strong>A simple wrapper node around the play functionality of the sox commandline utility.</strong><br/></p>
+    <p>The node will play audio on the machine node-red runs on to the choosen output device from either a wav buffer send to it in the <code>msg.payload</code> or a path to an audio file as a string in the <code>msg.payload</code>. It will output playback information and any debug info in the <code>msg.payload</code> to its output. You can stop the playback at anytime with a <code>msg.payload</code> of <strong>stop</strong>. When playing in queue mode and there is items in the queue the node also accepts a <code>msg.payload</code> of <strong>clear</strong> to clear the queue or <strong>next</strong> to skip to the next item in the queue. When stopped the queue will be automatically cleared. The node tries to guess
+        the audio format of buffer inputs for aiff, wav, flac, mp3 and ogg. For other formats you have to
+        include the file extension as <code>msg.format</code> with the buffer input.<br/></p>
     <p><i>For detailed usage information please go to <a href="https://github.com/johanneskropf/node-red-contrib-sox-utils">node-red-contrib-sox-utils</a>.</i></p>
 </script>

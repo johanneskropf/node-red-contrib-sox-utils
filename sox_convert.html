@@ -281,6 +281,18 @@
 </script>
 
 <script type="text/html" data-help-name="sox-convert">
-    <p><strong>A simple wrapper node around the conversion functionality of the sox commandline utility.</strong></p>
-    <p></p>
+    <p><strong>A simple wrapper node around the conversion functionality of the sox commandline
+    utility.</strong><br/></p>
+    <p>This node will convert audio send to its input in the <code>msg.payload</code> either as a single
+    buffer or as a path to a file to the selected format.
+    It will output the converted audio as a buffer to the first output as a
+    <code>msg.payload</code> or as a file on the file system. If configured to output to a file it
+    will emit the file path of the converted audio to the first output when conversion is finished.
+    Any recording information or debug info will be send in the <code>msg.payload</code>
+    to its second output. The node tries to guess
+    the audio format of buffer inputs for aiff, wav, flac, mp3 and ogg. For other formats you have to
+    include the file extension as <code>msg.format</code> with the buffer input.<br/></p>
+    <p><i>For detailed usage information please go to
+    <a href="https://github.com/johanneskropf/node-red-contrib-sox-utils">node-red-contrib-sox-utils
+    </a>.</i></p>
 </script>
