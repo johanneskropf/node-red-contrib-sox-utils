@@ -4,7 +4,7 @@
 !!!this is very much wip, so use with care!!!
 ```
 
-a simple node-red wrapper around some of the record and play functionality of the [sox commandline utility](http://sox.sourceforge.net/) on linux
+a simple node-red wrapper around some of the record, play and convert functionality of the [sox commandline utility](http://sox.sourceforge.net/) on linux
 
 # Prerequisites
 
@@ -59,5 +59,7 @@ The node will output the converted audio as a single binary buffer in the `msg.p
 If you check the box for detailed debug and conversion info you will receive detailed output from sox about the conversion and input/output formats on the second output of the node. You will always receive a `msg.payload` of `complete` when the conversion was finished on this second output.
 
 # Additional Information
+
+## Handling large files
 
 As the nodes try to do as much as possible in memory by using buffers or writing tmp files to /dev/shm you would need a lot of ram or change the size of /dev/shm to deal with very large or very many files. If you plan to record long pieces of high quality audio or play very large audio files please use the file based input/output that all nodes in this suite include as an option. This way sox will read and write the data directly from and to your filesystem which in that occasion is preferable. 
