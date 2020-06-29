@@ -90,7 +90,7 @@ module.exports = function(RED) {
             let queueItem = node.queue.shift();
             node.argArr = [];
             if (!node.debugOutput) { node.argArr.push('-q'); }
-            node.argArr.push(queueItem.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
+            node.argArr.push(queueItem.trim(),'-t','alsa',node.outputDevice,'vol',node.gain,'dB');
             spawnPlay();
             if (node.queue.lenght === 0) { node.addN = 0; }
             return;
@@ -203,7 +203,7 @@ module.exports = function(RED) {
             } else if (msg.payload === 'next' && node.queue.length === 0) {
                 node.warn('no other items in the queue');
             } else if (!node.soxPlay && typeof msg.payload === 'string') {
-                node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
+                node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'vol',node.gain,'dB');
                 spawnPlay();
             } else if (!node.soxPlay && Buffer.isBuffer(msg.payload)) {
                 try {
@@ -212,13 +212,13 @@ module.exports = function(RED) {
                     (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
                     return;
                 }
-                node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'gain',node.gain);
+                node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'vol',node.gain,"dB");
                 spawnPlay();
             } else if (node.soxPlay && node.startNew === 'start') {
                 node.argArr = [];
                 if (!node.debugOutput) { node.argArr.push('-q'); }
                 if (typeof msg.payload === 'string') {
-                    node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'gain',node.gain);
+                    node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'vol',node.gain,'dB');
                 } else if (Buffer.isBuffer(msg.payload)) {
                     try {
                         fs.writeFileSync(node.filePath, msg.payload);
@@ -226,7 +226,7 @@ module.exports = function(RED) {
                         (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
                         return;
                     }
-                    node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'gain',node.gain);
+                    node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'vol',node.gain,'dB');
                 }
                 node.newPayload = msg.payload;
                 node.killNew = true;
