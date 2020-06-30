@@ -24,7 +24,7 @@ module.exports = function(RED) {
         this.statusTimer = false;
         this.statusTimer2 = false;
         this.outputDeviceRaw = config.outputDevice;
-        this.outputDevice = "hw:";
+        this.outputDevice = "plughw:";
         this.gain = config.gain;
         this.debugOutput = config.debugOutput;
         this.argArr = [];
@@ -245,10 +245,10 @@ module.exports = function(RED) {
                 }
                 if (node.queue.length === 1) {
                     msg.payload = 'added to queue. There is now ' + node.queue.length + ' file in the queue.';
-                    (send) ? send(msg) : node.send(msg)
+                    (send) ? send(msg) : node.send(msg);
                 } else {
                     msg.payload = 'added to queue. There is now ' + node.queue.length + ' files in the queue.';
-                    (send) ? send(msg) : node.send(msg)
+                    (send) ? send(msg) : node.send(msg);
                 }
                 node_status(["playing | " + node.queue.length + " in queue","blue","dot"]);
             } else {
