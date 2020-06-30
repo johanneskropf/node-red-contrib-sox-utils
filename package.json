@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-sox-utils",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "a node-red wrapper for some of the sox commandline utils play and record functionality",
   "author": "Johannes Kropf",
   "license": "Apache-2.0",
@@ -13,7 +13,8 @@
         "play",
         "audio",
         "sound",
-        "wav"
+        "wav",
+        "convert"
   ],
   "repository": {
        "type": "git",
