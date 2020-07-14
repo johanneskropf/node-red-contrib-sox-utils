@@ -232,6 +232,7 @@ module.exports = function(RED) {
                     if (!msg.hasOwnProperty("format")) {
                         node_status(["error","red","dot"],1500);
                         (done) ? done("msg with a buffer payload also needs to have a coresponding msg.format property") : node.error("msg with a buffer payload also needs to have a coresponding msg.format property");
+                        node_status(["error starting conversion command","red","ring"],1500);
                         return;
                     }
                     testFormat = msg.format;
@@ -257,7 +258,17 @@ module.exports = function(RED) {
             node.argArr1 = [];
             if (node.debugOutput) { node.argArr1.push("-V3"); }
             node.argArr1.push(node.inputFilePath);
-            node.argArr = node.argArr1.concat(node.argArr2);
+            
+            if (msg.hasOwnProperty("options")) {
+                if (typeof msg.options !== "string") {
+                    (done) ? done("options should be send as a single string including the additional arguments as per the sox commandline documentation.") : node.error("options should be send as a single string including the additional arguments as per the sox commandline documentation.");
+                    return;
+                }
+                let options = msg.options.trim().split(" ");
+                node.argArr = node.argArr1.concat(node.argArr2, options);
+            } else {
+                node.argArr = node.argArr1.concat(node.argArr2);
+            }
                     
             spawnConvert(msg, send, done);
             

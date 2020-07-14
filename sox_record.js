@@ -125,7 +125,18 @@ module.exports = function(RED) {
             let msg2 = {};
             
             try{
-                node.soxRecord = spawn("sox",node.argArr);
+                if (msg.hasOwnProperty("options")) {
+                    if (typeof msg.options !== "string") {
+                        (done) ? done("options should be send as a single string including the additional arguments as per the sox commandline documentation.") : node.error("options should be send as a single string including the additional arguments as per the sox commandline documentation.");
+                        node_status(["error starting record command","red","ring"],1500);
+                        return;
+                    }
+                    let options = msg.options.trim().split(" ");
+                    let newArgArr = node.argArr.concat(options);
+                    node.soxRecord = spawn("sox",newArgArr);
+                } else {
+                    node.soxRecord = spawn("sox",node.argArr);
+                }
             } 
             catch (error) {
                 node_status(["error starting record command","red","ring"],1500);
