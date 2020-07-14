@@ -13,6 +13,7 @@ Once you have sox installed you can install the node by running the following np
 ```
 npm install johanneskropf/node-red-contrib-sox-utils
 ```
+*git needs to be installed for installs from a repository.*
 Now restart nodered and it should appear as its own category called Sox Utils in your palette on the left.
 
 ##### *mp3*
