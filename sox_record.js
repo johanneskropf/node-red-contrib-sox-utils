@@ -47,6 +47,7 @@ module.exports = function(RED) {
         this.filePath = "";
         this.shm = true;
         this.checkPath = true;
+        this.linux = true;
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -121,6 +122,8 @@ module.exports = function(RED) {
         }
         
         node.spawnRecord = function(msg, send, done) {
+            
+            
         
             let msg2 = {};
             
@@ -217,6 +220,13 @@ module.exports = function(RED) {
         
         node_status();
         
+        if (process.platform !== 'linux') {
+            node.linux = false;
+            node.error("Error. This node only works on Linux with ALSA and Sox.");
+            node_status(["platform error","red","ring"]);
+            return;
+        }
+        
         node.fileId = node.id.replace(/\./g,"");
         
         if(node.outputFormat === "file" && node.manualPath.length === 0) {
@@ -246,6 +256,12 @@ module.exports = function(RED) {
         node.argArr.push("gain",node.gain);
         
         node.on('input', function(msg, send, done) {
+            
+            if (!node.linux) {
+                (done) ? done("Error. This node only works on Linux with ALSA and Sox.") : node.error("Error. This node only works on Linux with ALSA and Sox.");
+                node_status(["platform error","red","ring"]);
+                return;
+            }
             
             if (!node.checkPath) {
                 (done) ? done("no file path") : node.error("no file path");
@@ -283,20 +299,22 @@ module.exports = function(RED) {
         
             node_status();
             
-            const checkDir = (node.shm) ? "/dev/shm/" : "/tmp/";
-            fs.readdir(checkDir, (err,files) => {
-                if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
-                files.forEach(file => {
-                    if (file.match(node.fileId)) {
-                        try {
-                            fs.unlinkSync(checkDir + file);
-                        } catch (error) {
-                            node.error("couldnt delete leftover " + file);
+            if (node.linux) {
+                const checkDir = (node.shm) ? "/dev/shm/" : "/tmp/";
+                fs.readdir(checkDir, (err,files) => {
+                    if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
+                    files.forEach(file => {
+                        if (file.match(node.fileId)) {
+                            try {
+                                fs.unlinkSync(checkDir + file);
+                            } catch (error) {
+                                node.error("couldnt delete leftover " + file);
+                            }
                         }
-                    }
+                    });
+                    return;
                 });
-                return;
-            });
+            }
             
             if(node.soxRecord) {
                 node.soxRecord.kill();
@@ -308,24 +326,34 @@ module.exports = function(RED) {
     RED.nodes.registerType("sox-record",SoxRecordNode);
     
     RED.httpAdmin.get("/soxRecord/devices", RED.auth.needsPermission('sox-record.read'), function(req,res) {
-        exec('arecord -l', (error, stdout, stderr) => {
-            if (error) {
-                node.error(`exec error: ${error}`);
-                return;
-            }
-            if (stderr) { node.error(`stderr: ${stderr}`); }
-            if (stdout) {
-                let deviceArr = stdout.split("\n");
-                deviceArr = deviceArr.filter(line => line.match(/card/g));
-                deviceArr = deviceArr.map(device => {
-                    let deviceObj = {};
-                    deviceObj.name = device.replace(/\s\[[^\[\]]*\]/g, "");
-                    deviceObj.number = device.match(/[0-9](?=\:)/g);
-                    return deviceObj;
-                });
-                res.json(deviceArr);
-            }
-        });
+        try {
+            exec('arecord -l', (error, stdout, stderr) => {
+                if (error) {
+                    res.json("error");
+                    console.log(error)
+                    return;
+                }
+                if (stderr) {
+                    res.json("error");
+                    console.log(stderr);
+                    return; 
+                }
+                if (stdout) {
+                    let deviceArr = stdout.split("\n");
+                    deviceArr = deviceArr.filter(line => line.match(/card/g));
+                    deviceArr = deviceArr.map(device => {
+                        let deviceObj = {};
+                        deviceObj.name = device.replace(/\s\[[^\[\]]*\]/g, "");
+                        deviceObj.number = device.match(/[0-9](?=\:)/g);
+                        return deviceObj;
+                    });
+                    res.json(deviceArr);
+                }
+            });
+        } catch (error) {
+            res.json("error");
+            console.log(error);
+        }
     });
     
     RED.httpAdmin.post("/soxRecord/:id/record", RED.auth.needsPermission('sox-record.write'), function(req,res) {
@@ -333,16 +361,20 @@ module.exports = function(RED) {
         var node = RED.nodes.getNode(req.params.id)
         
         if (node != null) {
+            if (!node.linux) {
+                node.error("Error. This node only works on Linux with ALSA and Sox.");
+                node_status(["platform error","red","ring"]);
+                res.sendStatus(500);
+                return;
+            }
             try {
                 if(!node.soxRecord){
                     msg = {};
                     node.spawnRecord(msg);
                     node.send([null,{payload:"starting"}]);
-                    //node.receive({payload:"start"});
                     res.sendStatus(202);
                 } else {
                     node.soxRecord.kill("SIGINT");
-                    //node.receive({payload:"stop"});
                     res.sendStatus(200);
                 }
             } catch(err) {

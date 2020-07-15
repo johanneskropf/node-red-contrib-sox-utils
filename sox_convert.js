@@ -54,6 +54,7 @@ module.exports = function(RED) {
         this.manualPath = config.manualPath;
         this.shm = true;
         this.checkPath = true;
+        this.linux = true;
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -153,6 +154,13 @@ module.exports = function(RED) {
         
         node_status();
         
+        if (process.platform !== 'linux') {
+            node.linux = false;
+            node.error("Error. This node only works on Linux with ALSA and Sox.");
+            node_status(["platform error","red","ring"]);
+            return;
+        }
+        
         node.fileId = node.id.replace(/\./g,"");
         
         if (!fs.existsSync('/dev/shm')) { node.shm = false; }
@@ -207,6 +215,12 @@ module.exports = function(RED) {
         
         node.on('input', function(msg, send, done) {
             
+            if (!node.linux) {
+                (done) ? done("Error. This node only works on Linux with ALSA and Sox.") : node.error("Error. This node only works on Linux with ALSA and Sox.");
+                node_status(["platform error","red","ring"]);
+                return;
+            }
+            
             if (node.soxConvert) {
                 node.warn("already converting, ignoring new input");
                 if (done) { done(); }
@@ -215,6 +229,11 @@ module.exports = function(RED) {
             
             if (!node.checkPath) {
                 (done) ? done("no file path") : node.error("no file path");
+                return;
+            }
+            
+            if (typeof msg.payload === "string" && msg.payload.length === 0) {
+                (done) ? done("String input was empty") : node.error("String input was empty");
                 return;
             }
             
@@ -278,21 +297,23 @@ module.exports = function(RED) {
         
             node_status();
             
-            const checkDir = (node.shm) ? "/dev/shm/" : "/tmp/";
-            fs.readdir(checkDir, (err,files) => {
-                if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
-                files.forEach(file => {
-                    if (file.match(node.fileId)) {
-                        try {
-                            fs.unlinkSync(checkDir + file);
-                        } catch (error) {
-                            node.error("couldnt delete leftover " + file);
+            if (node.linux) {
+                const checkDir = (node.shm) ? "/dev/shm/" : "/tmp/";
+                fs.readdir(checkDir, (err,files) => {
+                    if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
+                    files.forEach(file => {
+                        if (file.match(node.fileId)) {
+                            try {
+                                fs.unlinkSync(checkDir + file);
+                            } catch (error) {
+                                node.error("couldnt delete leftover " + file);
+                            }
                         }
-                    }
+                    });
+                    return;
                 });
-                return;
-            });
-            
+            }
+                
             if(node.soxConvert) {
                 node.soxConvert.kill();
             }

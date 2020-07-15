@@ -38,6 +38,7 @@ module.exports = function(RED) {
         this.shm = true;
         this.addN = 0;
         this.lastMsg = {};
+        this.linux = true;
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -149,6 +150,13 @@ module.exports = function(RED) {
         
         node_status();
         
+        if (process.platform !== 'linux') {
+            node.linux = false;
+            node.error("Error. This node only works on Linux with ALSA and Sox.");
+            node_status(["platform error","red","ring"]);
+            return;
+        }
+        
         node.fileId = node.id.replace(/\./g,"");
         
         if (!fs.existsSync('/dev/shm')) { node.shm = false; }
@@ -163,9 +171,18 @@ module.exports = function(RED) {
         
         node.on('input', function(msg, send, done) {
             
-            node.lastMsg = msg;
+            if (!node.linux) {
+                (done) ? done("Error. This node only works on Linux with ALSA and Sox.") : node.error("Error. This node only works on Linux with ALSA and Sox.");
+                node_status(["platform error","red","ring"]);
+                return;
+            }
             
-            if (node.startNew === "queue") { node.addN += 1; }
+            if (typeof msg.payload === "string" && msg.payload.length === 0) {
+                    (done) ? done("String input was empty") : node.error("String input was empty");
+                    return;
+            }
+            
+            node.lastMsg = msg;
             
             if (Buffer.isBuffer(msg.payload)) {
                 if (msg.payload.length === 0) {
@@ -254,6 +271,7 @@ module.exports = function(RED) {
             } else {
                 node.warn('ignoring input as there is already a playback in progress');
             }
+            if (node.startNew === "queue") { node.addN += 1; }
             if (done) { done(); }
             return;
         });
@@ -264,24 +282,25 @@ module.exports = function(RED) {
             
             node.queue = [];
             
-            const checkDir = (node.shm) ? "/dev/shm/" : "/tmp/";
-            fs.readdir(checkDir, (err,files) => {
-                if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
-                files.forEach(file => {
-                    if (file.match(node.fileId)) {
-                        try {
-                            fs.unlinkSync(checkDir + file);
-                        } catch (error) {
-                            node.error("couldnt delete leftover " + file);
+            if (node.linux) {
+                const checkDir = (node.shm) ? "/dev/shm/" : "/tmp/";
+                fs.readdir(checkDir, (err,files) => {
+                    if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
+                    files.forEach(file => {
+                        if (file.match(node.fileId)) {
+                            try {
+                                fs.unlinkSync(checkDir + file);
+                            } catch (error) {
+                                node.error("couldnt delete leftover " + file);
+                            }
                         }
-                    }
+                    });
+                    return;
                 });
-                return;
-            });
+            }
             
             if(node.soxPlay) {
-                node.soxPlay.kill();
-                
+                node.soxPlay.kill();     
             }
             
         });
@@ -290,23 +309,34 @@ module.exports = function(RED) {
     RED.nodes.registerType("sox-play",SoxPlayNode);
 
     RED.httpAdmin.get("/soxPlay/devices", RED.auth.needsPermission('sox-play.read'), function(req,res) {
-        exec('aplay -l', (error, stdout, stderr) => {
-            if (error) {
-                node.error(`exec error: ${error}`);
-                return;
-            }
-            if (stderr) { node.error(`stderr: ${stderr}`); }
-            if (stdout) {
-                let deviceArr = stdout.split("\n");
-                deviceArr = deviceArr.filter(line => line.match(/card/g));
-                deviceArr = deviceArr.map(device => {
-                    let deviceObj = {};
-                    deviceObj.name = device.replace(/\s\[[^\[\]]*\]/g, "");
-                    deviceObj.number = device.match(/[0-9](?=\:)/g);
-                    return deviceObj;
-                });
-                res.json(deviceArr);
-            }
-        });
+        try {
+            exec('aplay -l', (error, stdout, stderr) => {
+                if (error) {
+                    res.json("error");
+                    console.log(error)
+                    return;
+                }
+                if (stderr) {
+                    res.json("error");
+                    console.log(stderr);
+                    return; 
+                }
+                if (stdout) {
+                    let deviceArr = stdout.split("\n");
+                    deviceArr = deviceArr.filter(line => line.match(/card/g));
+                    deviceArr = deviceArr.map(device => {
+                        let deviceObj = {};
+                        deviceObj.name = device.replace(/\s\[[^\[\]]*\]/g, "");
+                        deviceObj.number = device.match(/[0-9](?=\:)/g);
+                        return deviceObj;
+                    });
+                    res.json(deviceArr);
+                }
+            });
+        } catch (error) {
+            res.json("error");
+            console.log(error);
+        }
+        
     });
 }

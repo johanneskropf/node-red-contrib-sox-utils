@@ -65,7 +65,11 @@
             var node = this;
             
             $.getJSON('soxRecord/devices',function(data) {
-                console.log(data)
+                if (data === "error") {
+                    $("#error-wrapper").hide();
+                    return;
+                }
+                $("#error").hide();
                 data.forEach(device => {
                     $('#node-input-inputSource').append(`<option value="${device.number}">${device.name}</option>`);
                 });
@@ -158,108 +162,113 @@
 </script>
 
 <script type="text/html" data-template-name="sox-record">
-    <h4>Source</h4>
-    <div class="form-row">
-        <label for="node-input-inputSource"></i>input device</label>
-        <select id="node-input-inputSource">
-            <option value="default">default device</option> 
-        </select>
+    <div id="error">
+        <p>Something went wrong. The node couldnt retrieve any devices. The node only runs on Linux with ALSA. If any errors where logged you will find them in the syslog.</p>
     </div>
-    <div class="form-row">
-        <label for="node-input-buttonStart"></i>start/stop</label>
-        <select id="node-input-buttonStart">
-            <option value="msg">control with msg.payload</option> 
-            <option value="button">control with button on node</option>
-        </select>
-    </div>
-    <h4>Settings</h4>
-    <div class="form-row">
-        <label for="node-input-byteOrder"></i>byte order</label>
-        <select id="node-input-byteOrder">
-            <option value="-L">little endian</option> 
-            <option value="-B">big endian</option>
-        </select>
-    </div>
-    <div class="form-row">
-        <label for="node-input-encoding"></i>encoding</label>
-        <select id="node-input-encoding">
-            <option value="signed-integer">signed-integer</option> 
-            <option value="unsigned-integer">unsigned-integer</option>
-            <option value="floating-point">floating-point</option>
-        </select>
-    </div>
-    <div class="form-row">
-        <label for="node-input-channels"><i class="icon-tag"></i>channels</label>
-        <input type="number" id="node-input-channels" value="1" />
-    </div>
-    <div class="form-row">
-        <label for="node-input-rate"><i class="icon-tag"></i>sample-rate</label>
-        <input type="number" id="node-input-rate" value="16000" />
-    </div>
-    <div class="form-row">
-        <label for="node-input-bits"><i class="icon-tag"></i>bit-depth</label>
-        <input type="number" id="node-input-bits" value="16" />
-    </div>
-    <div class="form-row">
-        <label for="node-input-gain"><i class="icon-tag"></i>gain in dB</label>
-        <input type="text" id="node-input-gain" value="0" />
-    </div>
-    <h4>Recording Duration</h4>
-    <div class="form-row">
-        <label for="node-input-showDuration">duration</i></label>
-        <input type="checkbox" id="node-input-showDuration" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
-        <label for="node-input-showDuration" style="width: 70%;">show options</label>
-    </div>
-    <div id="durationOptionWrapper">
+    <div id="error-wrapper">
+        <h4>Source</h4>
         <div class="form-row">
-            <label for="node-input-durationType"><i class="icon-tag"></i>record time</label>
-            <select id="node-input-durationType">
-                <option value="forever">record until a stop msg is send</option> 
-                <option value="limited">record for specified amount of seconds</option>
+            <label for="node-input-inputSource"></i>input device</label>
+            <select id="node-input-inputSource">
+                <option value="default">default device</option> 
             </select>
         </div>
-        <div id="durationLengthWrapper" class="form-row">
-            <label for="node-input-durationLength"><i class="icon-tag"></i>seconds</label>
-            <input type="number" id="node-input-durationLength" value="0" />
-        </div>
         <div class="form-row">
-            <label for="node-input-silenceDetection"><i class="icon-tag"></i>on silence</label>
-            <select id="node-input-silenceDetection">
-                <option value="nothing">do nothing</option> 
-                <option value="something">stop recording</option>
+            <label for="node-input-buttonStart"></i>start/stop</label>
+            <select id="node-input-buttonStart">
+                <option value="msg">control with msg.payload</option> 
+                <option value="button">control with button on node</option>
             </select>
         </div>
-        <div id="silenceDurationWrapper" class="form-row">
-            <label for="node-input-silenceDuration"><i class="icon-tag"></i>below duration in s</label>
-            <input type="text" id="node-input-silenceDuration" value="2.0" />
-        </div>
-        <div id="silenceThresholdWrapper" class="form-row">
-            <label for="node-input-silenceThreshold"><i class="icon-tag"></i>below threshold in %</label>
-            <input type="text" id="node-input-silenceThreshold" value="2.0" />
-        </div>
-    </div>
-    <h4>Output</h4>
-    <div class="form-row">
-        <label for="node-input-outputFormat"></i>output format</label>
-        <select id="node-input-outputFormat">
-            <option value="stream">a stream of raw buffers while recording</option> 
-            <option value="once">a single raw buffer when recording ends</option>
-            <option value="wav">a single wav buffer when recording ends</option>
-            <option value="file">write recorded audio to wav file</option>
-        </select>
-    </div>
-    <div id="outputPathWrapper">
+        <h4>Settings</h4>
         <div class="form-row">
-            <label for="node-input-manualPath"><i class="icon-tag"></i>output File</label>
-            <input type="text" id="node-input-manualPath" placeholder="" style="display:inline-block; width: 60%; vertical-align:baseline;">
-            <label for="node-input-manualPath" id="outputExt" style="width: 10%;">.wav</label>
+            <label for="node-input-byteOrder"></i>byte order</label>
+            <select id="node-input-byteOrder">
+                <option value="-L">little endian</option> 
+                <option value="-B">big endian</option>
+            </select>
         </div>
-        <br>
-    </div>
-    <div class="form-row">
-        <label for="node-input-debugOutput"></i>debug</label>
-        <input type="checkbox" id="node-input-debugOutput" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
-        <label for="node-input-debugOutput" style="width: 70%;">detailed debug info to 2nd output</label>
+        <div class="form-row">
+            <label for="node-input-encoding"></i>encoding</label>
+            <select id="node-input-encoding">
+                <option value="signed-integer">signed-integer</option> 
+                <option value="unsigned-integer">unsigned-integer</option>
+                <option value="floating-point">floating-point</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="node-input-channels"><i class="icon-tag"></i>channels</label>
+            <input type="number" id="node-input-channels" value="1" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-rate"><i class="icon-tag"></i>sample-rate</label>
+            <input type="number" id="node-input-rate" value="16000" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-bits"><i class="icon-tag"></i>bit-depth</label>
+            <input type="number" id="node-input-bits" value="16" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-gain"><i class="icon-tag"></i>gain in dB</label>
+            <input type="text" id="node-input-gain" value="0" />
+        </div>
+        <h4>Recording Duration</h4>
+        <div class="form-row">
+            <label for="node-input-showDuration">duration</i></label>
+            <input type="checkbox" id="node-input-showDuration" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
+            <label for="node-input-showDuration" style="width: 70%;">show options</label>
+        </div>
+        <div id="durationOptionWrapper">
+            <div class="form-row">
+                <label for="node-input-durationType"><i class="icon-tag"></i>record time</label>
+                <select id="node-input-durationType">
+                    <option value="forever">record until a stop msg is send</option> 
+                    <option value="limited">record for specified amount of seconds</option>
+                </select>
+            </div>
+            <div id="durationLengthWrapper" class="form-row">
+                <label for="node-input-durationLength"><i class="icon-tag"></i>seconds</label>
+                <input type="number" id="node-input-durationLength" value="0" />
+            </div>
+            <div class="form-row">
+                <label for="node-input-silenceDetection"><i class="icon-tag"></i>on silence</label>
+                <select id="node-input-silenceDetection">
+                    <option value="nothing">do nothing</option> 
+                    <option value="something">stop recording</option>
+                </select>
+            </div>
+            <div id="silenceDurationWrapper" class="form-row">
+                <label for="node-input-silenceDuration"><i class="icon-tag"></i>below duration in s</label>
+                <input type="text" id="node-input-silenceDuration" value="2.0" />
+            </div>
+            <div id="silenceThresholdWrapper" class="form-row">
+                <label for="node-input-silenceThreshold"><i class="icon-tag"></i>below threshold in %</label>
+                <input type="text" id="node-input-silenceThreshold" value="2.0" />
+            </div>
+        </div>
+        <h4>Output</h4>
+        <div class="form-row">
+            <label for="node-input-outputFormat"></i>output format</label>
+            <select id="node-input-outputFormat">
+                <option value="stream">a stream of raw buffers while recording</option> 
+                <option value="once">a single raw buffer when recording ends</option>
+                <option value="wav">a single wav buffer when recording ends</option>
+                <option value="file">write recorded audio to wav file</option>
+            </select>
+        </div>
+        <div id="outputPathWrapper">
+            <div class="form-row">
+                <label for="node-input-manualPath"><i class="icon-tag"></i>output File</label>
+                <input type="text" id="node-input-manualPath" placeholder="" style="display:inline-block; width: 60%; vertical-align:baseline;">
+                <label for="node-input-manualPath" id="outputExt" style="width: 10%;">.wav</label>
+            </div>
+            <br>
+        </div>
+        <div class="form-row">
+            <label for="node-input-debugOutput"></i>debug</label>
+            <input type="checkbox" id="node-input-debugOutput" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
+            <label for="node-input-debugOutput" style="width: 70%;">detailed debug info to 2nd output</label>
+        </div>
     </div>
     <h4>Name</h4>
     <div class="form-row">
