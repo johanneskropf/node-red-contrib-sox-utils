@@ -291,7 +291,11 @@
     Any recording information or debug info will be send in the <code>msg.payload</code>
     to its second output. The node tries to guess
     the audio format of buffer inputs for aiff, wav, flac, mp3 and ogg. For other formats you have to
-    include the file extension as <code>msg.format</code> with the buffer input.<br/></p>
+    include the file extension as <code>msg.format</code> with the buffer input. If the input is raw
+    audio you always for both files and buffers also need to include the sample rate as
+    <code>msg.rate</code>, the encoding as
+    <code>msg.encoding</code>, the bits per sample as <code>msg.bits</code> and the channels of the audio
+    as <code>msg.channels</code>.<br/></p>
     <p><i>For detailed usage information please go to
     <a href="https://github.com/johanneskropf/node-red-contrib-sox-utils">node-red-contrib-sox-utils
     </a>.</i></p>

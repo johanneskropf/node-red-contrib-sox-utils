@@ -132,6 +132,7 @@ module.exports = function(RED) {
                         msg.payload = fs.readFileSync(node.filePath);
                     } catch (error) {
                         (done) ? done("couldnt get tmp file after conversion") : node.error("couldnt get tmp file after conversion");
+                        return;
                     }
                 } else {
                     msg.format = node.conversionType;
@@ -276,8 +277,15 @@ module.exports = function(RED) {
             
             node.argArr1 = [];
             if (node.debugOutput) { node.argArr1.push("-V3"); }
+            if (testFormat = "raw") {
+                if (!msg.rate || !msg.encoding || !msg.bits || !msg.channels) {
+                    (done) ? done("when converting raw audio you need to provide the following as properties of the incoming msg: the sample rate as msg.rate, the encoding as msg.encoding, the bits per sample as msg.bits and the channels of the audio as msg.channels") : node.error("when converting raw audio you need to provide the following as properties of the incoming msg: the sample rate as msg.rate, the encoding as msg.encoding, the bits per sample as msg.bits and the channels of the audio as msg.channels");
+                    return;
+                }
+                let rawArr = ["-r",msg.rate,"-e",msg.encoding,"-b",msg.bits,"-c",msg.channels];
+                node.argArr1 = node.argArr1.concat(rawArr);
+            }
             node.argArr1.push(node.inputFilePath);
-            
             if (msg.hasOwnProperty("options")) {
                 if (typeof msg.options !== "string") {
                     (done) ? done("options should be send as a single string including the additional arguments as per the sox commandline documentation.") : node.error("options should be send as a single string including the additional arguments as per the sox commandline documentation.");
@@ -288,7 +296,7 @@ module.exports = function(RED) {
             } else {
                 node.argArr = node.argArr1.concat(node.argArr2);
             }
-                    
+              
             spawnConvert(msg, send, done);
             
         });
