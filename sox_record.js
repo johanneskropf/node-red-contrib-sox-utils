@@ -178,6 +178,8 @@ module.exports = function(RED) {
                             fs.writeFileSync(node.filePath,node.outputBuffer);
                         }
                         catch (error){
+                            node_status(["error","red","dot"],1500);
+                            delete node.soxRecord;
                             (done) ? done("error saving tmp file" + err.message) : node.error("error saving tmp file" + err.message)
                             return;
                         }

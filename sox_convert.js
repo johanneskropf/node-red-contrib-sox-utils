@@ -131,6 +131,8 @@ module.exports = function(RED) {
                     try {
                         msg.payload = fs.readFileSync(node.filePath);
                     } catch (error) {
+                        node_status(["error","red","dot"],1500);
+                        delete node.soxConvert;
                         (done) ? done("couldnt get tmp file after conversion") : node.error("couldnt get tmp file after conversion");
                         return;
                     }
