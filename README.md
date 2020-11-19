@@ -57,6 +57,12 @@ You can choose to which audio format the input should be converted to from the n
 
 The node will output the converted audio as a single binary buffer in the `msg.payload` or directly to a file in which case it will send the file name and path as a `msg.payload` to the first output.  The format the audio was converted to will be passed in `msg.format` if in buffer mode. You can save those buffers directly to files with the extension from `msg.format` using the file node. You can also connect it directly to the play node in either mode. If in file mode please enter the path and name of your file but **not the extension** as this gets auto added!
 
+If the type of input audio is **raw** you need to add additional information to the input `msg` for the conversion to work. Those are:
+  * the bits per sample as `msg.bits`
+  * the encoding as `msg.encoding`
+  * the sample rate as `msg.rate`
+  * the channels as `msg.channels`
+
 If you check the box for detailed debug and conversion info you will receive detailed output from sox about the conversion and input/output formats on the second output of the node. You will always receive a `msg.payload` of `complete` when the conversion was finished on this second output.
 
 # Additional Information
@@ -64,3 +70,7 @@ If you check the box for detailed debug and conversion info you will receive det
 ## Handling large files
 
 As the nodes try to do as much as possible in memory by using buffers or writing tmp files to /dev/shm you would need a lot of ram or change the size of /dev/shm to deal with very large or very many files. If you plan to record long pieces of high quality audio or play very large audio files please use the file based input/output that all nodes in this suite include as an option. This way sox will read and write the data directly from and to your filesystem which in that occasion is preferable. 
+
+## Passing additonal effects to the record and convert nodes
+
+Both the record and convert node support adding additional effects that will be tagged on the sox command to execute. You can pass those additional arguments as a string in `msg.options` which contains the effects in the same format as they would be used in the sox command line utility. For example you could use `highpass 200 lowpass 8000` in `msg.options` to add a high and lowpass filter. The record node needs to be in the *control with `msg.payload`* mode to be able to pass in the additional arguments with the start msg. Keep in mind that not all effects might work. To debug use the detailed debug output to the second output option. 
