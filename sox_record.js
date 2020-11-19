@@ -29,6 +29,10 @@ module.exports = function(RED) {
         this.inputSourceRaw = config.inputSource;
         this.inputSource = "plughw:";
         this.inputSourceArr = [];
+        this.inputEncoding = config.inputEncoding;
+        this.inputChannels = config.inputChannels;
+        this.inputRate = config.inputRate;
+        this.inputBits = config.inputBits;
         this.byteOrder = config.byteOrder;
         this.encoding = config.encoding;
         this.channels = config.channels;
@@ -48,6 +52,9 @@ module.exports = function(RED) {
         this.shm = true;
         this.checkPath = true;
         this.linux = true;
+        this.fromInput = false;
+        this.notNow = false;
+        this.inputTimeout = false;
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -123,8 +130,6 @@ module.exports = function(RED) {
         
         node.spawnRecord = function(msg, send, done) {
             
-            
-        
             let msg2 = {};
             
             try{
@@ -140,6 +145,7 @@ module.exports = function(RED) {
                 } else {
                     node.soxRecord = spawn("sox",node.argArr);
                 }
+                
             } 
             catch (error) {
                 node_status(["error starting record command","red","ring"],1500);
@@ -162,6 +168,11 @@ module.exports = function(RED) {
             
             node.soxRecord.on('close', function (code,signal) {
                 
+                if(!node.notNow) { notNowWait(); }
+                if (node.inputTimeout !== false) {
+                    clearTimeout(node.inputTimeout);
+                    node.inputTimeout = false;
+                }
                 if (node.outputFormat == "once" || node.outputFormat == "wav") {
                     node.outputBuffer = Buffer.concat(node.outputBufferArr);
                     node.outputBufferArr = [];    
@@ -220,6 +231,42 @@ module.exports = function(RED) {
         
         }
         
+        function writeStdin(chunk){
+            
+            try {
+                node.soxRecord.stdin.write(chunk);
+            }
+            catch (error){
+                node.error("couldn't write to stdin: " + error);
+                if (node.recordCommand) {
+                    node_status(["error writing chunk","red","dot"],1500,["recording from stream","blue","dot"]);
+                } else {
+                    node_status(["error writing chunk","red","dot"],1500);
+                }
+            }
+            return;
+            
+        }
+        
+        function notNowWait(){
+            node.notNow = true;
+            
+            setTimeout(() => {
+                node.notNow = false;
+            }, 2000);
+        }
+        
+        function inputTimeoutTimer(){
+            if (node.inputTimeout !== false) {
+                clearTimeout(node.inputTimeout);
+                node.inputTimeout = false;
+            }
+            node.inputTimeout = setTimeout(() => {
+                node.soxRecord.stdin.destroy();
+                node.inputTimeout = false;
+            }, 1000);
+        }
+        
         node_status();
         
         if (process.platform !== 'linux') {
@@ -244,9 +291,14 @@ module.exports = function(RED) {
         
         (node.debugOutput) ? node.argArr.push("-t") : node.argArr.push("-q","-t");
         
-        node.inputSource = (node.inputSourceRaw === 'default') ? node.inputSourceRaw : node.inputSource += node.inputSourceRaw.toString();
-           
-        node.argArr.push("alsa",node.inputSource);
+        if (node.inputSourceRaw === "fromInput") {
+            node.inputSource = ["raw","-e",node.inputEncoding,"-c",node.inputChannels,"-r",node.inputRate,"-b",node.inputBits,"-"];
+            node.argArr = node.argArr.concat(node.inputSource);
+            node.fromInput = true;
+        } else  {
+            node.inputSource = (node.inputSourceRaw === 'default') ? node.inputSourceRaw : node.inputSource += node.inputSourceRaw.toString();
+            node.argArr.push("alsa",node.inputSource);
+        }
         
         (node.outputFormat === "file") ?
         node.argArr.push(node.byteOrder,"-e",node.encoding,"-c",node.channels,"-r",node.rate,"-b",node.bits,node.manualPath) :
@@ -270,28 +322,44 @@ module.exports = function(RED) {
                 return;
             }
             
-            switch(msg.payload){
-            
-                case "start":
-                    
-                    if(!node.soxRecord){
+            if (!node.fromInput) {
+                
+                switch(msg.payload){
+                
+                    case "start":
+                        
+                        if(!node.soxRecord){
+                            (node.silenceDetection === "nothing" && node.durationType === "forever") ? node.spawnRecord(msg) : node.spawnRecord(msg, send, done);
+                            (send) ? send([null,{payload:"starting"}]) : node.send([null,{payload:"starting"}]);
+                        } else {
+                            node.warn("already recording");
+                        }
+                        break;
+                        
+                    case "stop":
+                        
+                        if(node.soxRecord){
+                            node.soxRecord.kill("SIGINT");
+                        } else {
+                            node.warn("not recording right now");
+                        }
+                        break;
+                        
+                }
+                
+            } else {
+                if (Buffer.isBuffer(msg.payload) && !node.notNow) {
+                    if (!node.soxRecord) {
                         (node.silenceDetection === "nothing" && node.durationType === "forever") ? node.spawnRecord(msg) : node.spawnRecord(msg, send, done);
+                        writeStdin(msg.payload);
                         (send) ? send([null,{payload:"starting"}]) : node.send([null,{payload:"starting"}]);
                     } else {
-                        node.warn("already recording");
+                        writeStdin(msg.payload);
                     }
-                    break;
-                    
-                case "stop":
-                    
-                    if(node.soxRecord){
-                        node.soxRecord.kill("SIGINT");
-                    } else {
-                        node.warn("not recording right now");
-                    }
-                    break;
-                    
+                    inputTimeoutTimer();
+                }
             }
+            
             if (done && node.silenceDetection === "nothing" && node.durationType === "forever") { done(); }
             return;
             

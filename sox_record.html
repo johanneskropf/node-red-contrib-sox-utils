@@ -19,6 +19,10 @@
             buttonStart: {value:"msg", required:true},
             inputs: {value:1},
             inputSource: {value:"default", required:true},
+            inputEncoding: {value:"signed-integer", required:false},
+            inputChannels: {value:1, required:false},
+            inputRate: {value:16000, required:false},
+            inputBits: {value:16, required:false},
             byteOrder: {value:"-L", required:true},
             encoding: {value:"signed-integer", required:true},
             channels: {value:1, required:true},
@@ -122,6 +126,24 @@
                     node.inputs = 0;
                 }
             });
+            
+            $("#node-input-inputSource").on("change", function(){
+                let value = $("#node-input-inputSource").val();
+                if(value == "fromInput"){
+                    $("#inputFormatWrapper").show();
+                    $("#node-input-buttonStart").val("msg");
+                    $("#node-input-buttonStartRow").hide();
+                } else {
+                    $("#inputFormatWrapper").hide();
+                    $("#node-input-buttonStartRow").show();
+                }
+                let value2 = $("#node-input-buttonStart").val();
+                if(value2 === "msg"){
+                    node.inputs = 1;
+                } else {
+                    node.inputs = 0;
+                }
+            });
         },
         button: {
             enabled: function() {
@@ -170,17 +192,41 @@
         <div class="form-row">
             <label for="node-input-inputSource"></i>input device</label>
             <select id="node-input-inputSource">
-                <option value="default">default device</option> 
+                <option value="default">default device</option>
+                <option value="fromInput">record from a raw audio stream on the nodes input</option>
             </select>
         </div>
-        <div class="form-row">
+        <div class="form-row" id="node-input-buttonStartRow">
             <label for="node-input-buttonStart"></i>start/stop</label>
             <select id="node-input-buttonStart">
                 <option value="msg">control with msg.payload</option> 
                 <option value="button">control with button on node</option>
             </select>
         </div>
-        <h4>Settings</h4>
+        <div id="inputFormatWrapper">
+            <h4>Input Settings</h4>
+            <div class="form-row">
+                <label for="node-input-inputEncoding"></i>encoding</label>
+                <select id="node-input-inputEncoding">
+                    <option value="signed-integer">signed-integer</option> 
+                    <option value="unsigned-integer">unsigned-integer</option>
+                    <option value="floating-point">floating-point</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-inputChannels"><i class="icon-tag"></i>channels</label>
+                <input type="number" id="node-input-inputChannels" value="1" />
+            </div>
+            <div class="form-row">
+                <label for="node-input-inputRate"><i class="icon-tag"></i>sample-rate</label>
+                <input type="number" id="node-input-inputRate" value="16000" />
+            </div>
+            <div class="form-row">
+                <label for="node-input-inputBits"><i class="icon-tag"></i>bit-depth</label>
+                <input type="number" id="node-input-inputBits" value="16" />
+            </div>
+        </div>
+        <h4>Output Settings</h4>
         <div class="form-row">
             <label for="node-input-byteOrder"></i>byte order</label>
             <select id="node-input-byteOrder">

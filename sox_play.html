@@ -19,6 +19,11 @@
             outputDevice: {value:'default', required:true},
             gain: {value:'0', required:true},
             startNew: {value:'skip', required:true},
+            playStream: {value:false, required:true},
+            inputEncoding: {value:"signed-integer", required:false},
+            inputChannels: {value:1, required:false},
+            inputRate: {value:16000, required:false},
+            inputBits: {value:16, required:false},
             debugOutput: {value:false, required:true}
         },
         inputs:1,
@@ -35,6 +40,17 @@
         },
         oneditprepare: function() {
             var node = this;
+            
+            $("#node-input-playStream").on("change", function(){
+                if ($('#node-input-playStream').is(":checked")) { 
+                    $("#startNewRow").hide();
+                    $("#inputFormatWrapper").show();
+                } else {
+                    $("#startNewRow").show();
+                    $("#inputFormatWrapper").hide();
+                }
+            });
+            
             $.getJSON('soxPlay/devices',function(data) {
                 if (data === "error") {
                     $("#error-wrapper").hide();
@@ -66,7 +82,7 @@
             <label for="node-input-gain"><i class="icon-tag"></i>gain in dB</label>
             <input type="text" id="node-input-gain" value="0" />
         </div>
-        <div class="form-row">
+        <div class="form-row" id="startNewRow">
             <label for="node-input-startNew"></i>on new input while playing</label>
             <select id="node-input-startNew">
                 <option value="skip">ignore new input and keep current playback</option>
@@ -74,6 +90,35 @@
                 <option value="queue">add new input to queue if already playing</option>
             </select>
         </div>
+        <div class="form-row">
+            <label for="node-input-playStream"></i>stream</label>
+            <input type="checkbox" id="node-input-playStream" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
+            <label for="node-input-playStream" style="width: 70%;">input is a raw audio stream</label>
+        </div>
+        <div id="inputFormatWrapper">
+            <h4>Input Settings</h4>
+            <div class="form-row">
+                <label for="node-input-inputEncoding"></i>encoding</label>
+                <select id="node-input-inputEncoding">
+                    <option value="signed-integer">signed-integer</option> 
+                    <option value="unsigned-integer">unsigned-integer</option>
+                    <option value="floating-point">floating-point</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-inputChannels"><i class="icon-tag"></i>channels</label>
+                <input type="number" id="node-input-inputChannels" value="1" />
+            </div>
+            <div class="form-row">
+                <label for="node-input-inputRate"><i class="icon-tag"></i>sample-rate</label>
+                <input type="number" id="node-input-inputRate" value="16000" />
+            </div>
+            <div class="form-row">
+                <label for="node-input-inputBits"><i class="icon-tag"></i>bit-depth</label>
+                <input type="number" id="node-input-inputBits" value="16" />
+            </div>
+        </div>
+        <h4>Output</h4>
         <div class="form-row">
             <label for="node-input-debugOutput"></i>debug</label>
             <input type="checkbox" id="node-input-debugOutput" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">

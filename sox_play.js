@@ -39,6 +39,12 @@ module.exports = function(RED) {
         this.addN = 0;
         this.lastMsg = {};
         this.linux = true;
+        this.inputTimeout = false;
+        this.playStream = true;
+        this.inputEncoding = config.inputEncoding;
+        this.inputChannels = config.inputChannels;
+        this.inputRate = config.inputRate;
+        this.inputBits = config.inputBits;
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -148,6 +154,66 @@ module.exports = function(RED) {
         
         }
         
+        function spawnPlayStream(){
+            
+            node.argArr = ["-t","raw","-e",node.inputEncoding,"-c",node.inputChannels,"-r",node.inputRate,"-b",node.inputBits,"-",'-t','alsa',node.outputDevice,'vol',node.gain,"dB"];
+            try{
+                node.soxPlayStream = spawn("sox",node.argArr);
+            } 
+            catch (error) {
+                node_status(["error starting play command","red","ring"],1500);
+                node.error(error);
+                return;
+            }
+            
+            node.soxPlayStream.stderr.on('data', (data)=>{
+            
+                node.lastMsg.payload = data.toString();
+                node.send(node.lastMsg);
+                
+            });
+            
+            node.soxPlayStream.on('close', function (code,signal) {
+                
+                node.lastMsg.payload = "complete";
+                node.send(node.lastMsg);
+                node_status(["finished","green","dot"],1500);
+                delete node.soxPlayStream;
+                return;
+                
+            });
+            
+            node.soxPlayStream.stdout.on('data', (data)=>{
+                
+            });
+            return;
+        
+        }
+        
+        function writeStdin(chunk){
+            
+            try {
+                node.soxPlayStream.stdin.write(chunk);
+            }
+            catch (error){
+                node.error("couldn't write to stdin: " + error);
+                node_status(["error writing chunk","red","dot"],1500);
+            }
+            return;
+            
+        }
+        
+        function inputTimeoutTimer(){
+            if (node.inputTimeout !== false) {
+                clearTimeout(node.inputTimeout);
+                node.inputTimeout = false;
+            }
+            node.inputTimeout = setTimeout(() => {
+                node.soxPlayStream.stdin.destroy();
+                node.inputTimeout = false;
+            }, 1000);
+        }
+        
         node_status();
         
         if (process.platform !== 'linux') {
@@ -184,94 +250,107 @@ module.exports = function(RED) {
             
             node.lastMsg = msg;
             
-            if (Buffer.isBuffer(msg.payload)) {
-                if (msg.payload.length === 0) {
-                    (done) ? done("empty buffer") : node.error("empty buffer");
-                    node_status(["error","red","dot"],1500);
-                    return;
+            if (node.playStream) {
+                if (Buffer.isBuffer(msg.payload)) {
+                    if (!node.soxPlayStream) {
+                        spawnPlayStream();
+                    } else {
+                        writeStdin(msg.payload);
+                    }
+                    inputTimeoutTimer();
                 }
-                const testBuffer = msg.payload.slice(0,8);
-                let testFormat = guessFormat(testBuffer);
-                if (!testFormat) {
-                    if (!msg.hasOwnProperty("format")) {
-                        (done) ? done("msg with a buffer payload also needs to have a coresponding msg.format property") : node.error("msg with a buffer payload also needs to have a coresponding msg.format property");
+            } else {
+            
+                if (Buffer.isBuffer(msg.payload)) {
+                    if (msg.payload.length === 0) {
+                        (done) ? done("empty buffer") : node.error("empty buffer");
                         node_status(["error","red","dot"],1500);
                         return;
                     }
-                    testFormat = msg.format;
+                    const testBuffer = msg.payload.slice(0,8);
+                    let testFormat = guessFormat(testBuffer);
+                    if (!testFormat) {
+                        if (!msg.hasOwnProperty("format")) {
+                            (done) ? done("msg with a buffer payload also needs to have a coresponding msg.format property") : node.error("msg with a buffer payload also needs to have a coresponding msg.format property");
+                            node_status(["error","red","dot"],1500);
+                            return;
+                        }
+                        testFormat = msg.format;
+                    }
+                    node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + node.addN + "." + testFormat : "/tmp/" + node.fileId + node.addN +"." + testFormat;
                 }
-                node.filePath = (node.shm) ? "/dev/shm/" + node.fileId + node.addN + "." + testFormat : "/tmp/" + node.fileId + node.addN +"." + testFormat;
+                
+                if (msg.payload === 'stop' && node.soxPlay) {
+                    node.queue = [];
+                    node.soxPlay.kill();
+                } else if (msg.payload === 'stop' && !node.soxPlay) {
+                    node.warn('not playing');
+                } else if (msg.payload === 'clear' && node.queue.length !== 0) {
+                    node.queue = [];
+                    msg.payload = 'queue cleared';
+                    (send) ? send(msg) : node.send(msg);
+                    node_status(["playing","blue","dot"]);
+                } else if (msg.payload === 'clear' && node.queue.length === 0) {
+                    node.warn('queue is already empty');
+                } else if (msg.payload === 'next' && node.queue.length !== 0) {
+                    node.soxPlay.kill();
+                } else if (msg.payload === 'next' && node.queue.length === 0) {
+                    node.warn('no other items in the queue');
+                } else if (!node.soxPlay && typeof msg.payload === 'string') {
+                    node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'vol',node.gain,'dB');
+                    spawnPlay();
+                } else if (!node.soxPlay && Buffer.isBuffer(msg.payload)) {
+                    try {
+                        fs.writeFileSync(node.filePath, msg.payload);
+                    } catch (error) {
+                        (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
+                        return;
+                    }
+                    node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'vol',node.gain,"dB");
+                    spawnPlay();
+                } else if (node.soxPlay && node.startNew === 'start') {
+                    node.argArr = [];
+                    if (!node.debugOutput) { node.argArr.push('-q'); }
+                    if (typeof msg.payload === 'string') {
+                        node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'vol',node.gain,'dB');
+                    } else if (Buffer.isBuffer(msg.payload)) {
+                        try {
+                            fs.writeFileSync(node.filePath, msg.payload);
+                        } catch (error) {
+                            (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
+                            return;
+                        }
+                        node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'vol',node.gain,'dB');
+                    }
+                    node.newPayload = msg.payload;
+                    node.killNew = true;
+                    node.soxPlay.kill();
+                } else if (node.soxPlay && node.startNew === 'queue') {
+                    if (Buffer.isBuffer(msg.payload)) {
+                        try {
+                            fs.writeFileSync(node.filePath, msg.payload);
+                        } catch (error) {
+                            (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
+                            return;
+                        }
+                        node.queue.push(node.filePath);
+                    } else {
+                        node.queue.push(msg.payload);
+                    }
+                    if (node.queue.length === 1) {
+                        msg.payload = 'added to queue. There is now ' + node.queue.length + ' file in the queue.';
+                        (send) ? send(msg) : node.send(msg);
+                    } else {
+                        msg.payload = 'added to queue. There is now ' + node.queue.length + ' files in the queue.';
+                        (send) ? send(msg) : node.send(msg);
+                    }
+                    node_status(["playing | " + node.queue.length + " in queue","blue","dot"]);
+                } else {
+                    node.warn('ignoring input as there is already a playback in progress');
+                }
+                if (node.startNew === "queue") { node.addN += 1; }
             }
             
-            if (msg.payload === 'stop' && node.soxPlay) {
-                node.queue = [];
-                node.soxPlay.kill();
-            } else if (msg.payload === 'stop' && !node.soxPlay) {
-                node.warn('not playing');
-            } else if (msg.payload === 'clear' && node.queue.length !== 0) {
-                node.queue = [];
-                msg.payload = 'queue cleared';
-                (send) ? send(msg) : node.send(msg);
-                node_status(["playing","blue","dot"]);
-            } else if (msg.payload === 'clear' && node.queue.length === 0) {
-                node.warn('queue is already empty');
-            } else if (msg.payload === 'next' && node.queue.length !== 0) {
-                node.soxPlay.kill();
-            } else if (msg.payload === 'next' && node.queue.length === 0) {
-                node.warn('no other items in the queue');
-            } else if (!node.soxPlay && typeof msg.payload === 'string') {
-                node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'vol',node.gain,'dB');
-                spawnPlay();
-            } else if (!node.soxPlay && Buffer.isBuffer(msg.payload)) {
-                try {
-                    fs.writeFileSync(node.filePath, msg.payload);
-                } catch (error) {
-                    (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
-                    return;
-                }
-                node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'vol',node.gain,"dB");
-                spawnPlay();
-            } else if (node.soxPlay && node.startNew === 'start') {
-                node.argArr = [];
-                if (!node.debugOutput) { node.argArr.push('-q'); }
-                if (typeof msg.payload === 'string') {
-                    node.argArr.push(msg.payload.trim(),'-t','alsa',node.outputDevice,'vol',node.gain,'dB');
-                } else if (Buffer.isBuffer(msg.payload)) {
-                    try {
-                        fs.writeFileSync(node.filePath, msg.payload);
-                    } catch (error) {
-                        (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
-                        return;
-                    }
-                    node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'vol',node.gain,'dB');
-                }
-                node.newPayload = msg.payload;
-                node.killNew = true;
-                node.soxPlay.kill();
-            } else if (node.soxPlay && node.startNew === 'queue') {
-                if (Buffer.isBuffer(msg.payload)) {
-                    try {
-                        fs.writeFileSync(node.filePath, msg.payload);
-                    } catch (error) {
-                        (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
-                        return;
-                    }
-                    node.queue.push(node.filePath);
-                } else {
-                    node.queue.push(msg.payload);
-                }
-                if (node.queue.length === 1) {
-                    msg.payload = 'added to queue. There is now ' + node.queue.length + ' file in the queue.';
-                    (send) ? send(msg) : node.send(msg);
-                } else {
-                    msg.payload = 'added to queue. There is now ' + node.queue.length + ' files in the queue.';
-                    (send) ? send(msg) : node.send(msg);
-                }
-                node_status(["playing | " + node.queue.length + " in queue","blue","dot"]);
-            } else {
-                node.warn('ignoring input as there is already a playback in progress');
-            }
-            if (node.startNew === "queue") { node.addN += 1; }
             if (done) { done(); }
             return;
         });
