@@ -254,6 +254,12 @@ module.exports = function(RED) {
             if (node.playStream) {
                 if (Buffer.isBuffer(msg.payload)) {
                     if (!node.soxPlayStream) {
+                        if (msg.hasOwnProperty("bits") && msg.hasOwnProperty("channels") && msg.hasOwnProperty("encoding") && msg.hasOwnProperty("rate")){
+                            node.inputBits = msg.bits;
+                            node.inputChannels = msg.channels;
+                            node.inputEncoding = msg.encoding;
+                            node.inputRate = msg.rate;
+                        }
                         spawnPlayStream();
                     } else {
                         writeStdin(msg.payload);
