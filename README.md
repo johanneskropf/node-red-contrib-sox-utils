@@ -35,7 +35,7 @@ If you select the option for detailed debug output you will also receive detaile
 
 You can either set the node to record until you stop it or set a specified duration to record and than stop automatically. The duration needs to be put in as seconds. Even when set to record for a specified duration you can still stop the recording at any time with a `msg.payload` of `stop`.
 
-The node also supports the sox silence detection functionality. You can set the node to stop recording on silence. If you select this option you will have to enter a threshold value and a silence duration. The threshold value determines below which volume threshold in percent the samples should be counted as silence. The duration value determins how long the audio has to be below the silence threshold to stop recording.
+The node also supports the sox silence detection functionality. You can set the node to stop recording on silence. If you select this option you will have to enter a threshold value and a silence duration (those have to be point numbers, eg 1.0 or 2.3). The threshold value determines below which volume threshold in percent the samples should be counted as silence. The duration value determins how long the audio has to be below the silence threshold to stop recording.
 
 You can combine both silence detection and max record duration or use either independent of each other.
 
@@ -65,7 +65,7 @@ If the type of input audio is **raw** you need to add additional information to 
 
 If you check the box for detailed debug and conversion info you will receive detailed output from sox about the conversion and input/output formats on the second output of the node. You will always receive a `msg.payload` of `complete` when the conversion was finished on this second output.
 
-# Additional Information
+# Additional Information and Features
 
 ## Handling large files
 
@@ -73,4 +73,14 @@ As the nodes try to do as much as possible in memory by using buffers or writing
 
 ## Passing additonal effects to the record and convert nodes
 
-Both the record and convert node support adding additional effects that will be tagged on the sox command to execute. You can pass those additional arguments as a string in `msg.options` which contains the effects in the same format as they would be used in the sox command line utility. For example you could use `highpass 200 lowpass 8000` in `msg.options` to add a high and lowpass filter. The record node needs to be in the *control with `msg.payload`* mode to be able to pass in the additional arguments with the start msg. Keep in mind that not all effects might work. To debug use the detailed debug output to the second output option. 
+Both the record and convert node support adding additional effects that will be tagged on the sox command to execute. You can pass those additional arguments as a string in `msg.options` which contains the effects in the same format as they would be used in the sox command line utility. For example you could use `highpass 200 lowpass 8000` in `msg.options` to add a high and lowpass filter. The record node needs to be in the *control with `msg.payload`* mode to be able to pass in the additional arguments with the start msg. Keep in mind that not all effects might work. To debug use the detailed debug output to the second output option.
+
+## Beta recording from a stream of raw audio audio chunks and listening to it
+
+### Recording from a stream of raw audio chunks
+
+When you receive a stream of raw audio chunks from some other location than a microphone or an audio interface attached to the machine this node is running on you can now record this stream with all functionality of the sox record node. You can choose the record from node input option in the source dropdown. If the record node was in button mode it will automatically switch to input mode. An additional menu section will become available where you will have to enter header information about the input chunks manually for this to work.
+
+### Listening to a stream of raw audio chunks
+
+If you select the input is a raw audio stream option in the play node you can feed a stream of raw audio chunks into the node and it will attempt to play it. This option is exclusive to the other playback options. If it is selected the other playback options for files like queue, skip, replace become unavailable. You will have to enter the header information for the expected audio stream in the section of the menu that does become available when the stream option is selcted. The timing of the input chunks is crucial for a smooth playback so you will propably experience choppiness if the chunks traveled through other nodes or over a network as they are fed to sox as is.
