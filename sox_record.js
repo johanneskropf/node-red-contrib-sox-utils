@@ -324,6 +324,12 @@ module.exports = function(RED) {
             
             if (!node.fromInput) {
                 
+                if (Buffer.isBuffer(msg.payload)) {
+                    node.warn("node needs to be in stream node to process raw audio buffer streams");
+                    if (done) { done(); }
+                    return;
+                }
+                
                 switch(msg.payload){
                 
                     case "start":
@@ -357,6 +363,10 @@ module.exports = function(RED) {
                         writeStdin(msg.payload);
                     }
                     inputTimeoutTimer();
+                } else if (!Buffer.isBuffer(msg.payload)) {
+                    node.warn("if in stream mode input payloads need to be a stream of raw audio buffers");
+                    if (done) { done(); }
+                    return;
                 }
             }
             
