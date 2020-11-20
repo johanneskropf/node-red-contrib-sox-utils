@@ -141,6 +141,7 @@ module.exports = function(RED) {
                     }
                     let options = msg.options.trim().split(" ");
                     let newArgArr = node.argArr.concat(options);
+                    delete msg.options;
                     node.soxRecord = spawn("sox",newArgArr);
                 } else {
                     node.soxRecord = spawn("sox",node.argArr);
@@ -200,6 +201,10 @@ module.exports = function(RED) {
                     case "once":
                         msg.payload = node.outputBuffer;
                         msg.format = "raw";
+                        msg.encoding = node.encoding;
+                        msg.channels = node.channels;
+                        msg.rate = msg.rate;
+                        msg.bits = node.bits;
                         (send) ? send([msg,null]) : node.send([msg,null]);
                         break;
                         
@@ -223,7 +228,7 @@ module.exports = function(RED) {
                 if (node.outputFormat !== "stream") {
                     node.outputBufferArr.push(data);
                 } else {
-                    (send) ? send([{payload:data},null]) : node.send([{payload:data},null]);  
+                    (send) ? send([{payload:data,encoding:node.encoding,channels:node.channels,rate:node.rate,bits:node.bits},null]) : node.send([{payload:data,encoding:node.encoding,channels:node.channels,rate:node.rate,bits:node.bits},null]);  
                 }
                 
             });

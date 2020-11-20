@@ -295,6 +295,7 @@ module.exports = function(RED) {
                 }
                 let options = msg.options.trim().split(" ");
                 node.argArr = node.argArr1.concat(node.argArr2, options);
+                delete msg.options;
             } else {
                 node.argArr = node.argArr1.concat(node.argArr2);
             }
