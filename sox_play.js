@@ -165,6 +165,7 @@ module.exports = function(RED) {
                 node.error(error);
                 return;
             }
+            node_status(["playing stream","blue","dot"]);
             
             node.soxPlayStream.stderr.on('data', (data)=>{
             
