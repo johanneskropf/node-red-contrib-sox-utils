@@ -55,6 +55,7 @@ module.exports = function(RED) {
         this.shm = true;
         this.checkPath = true;
         this.linux = true;
+        this.testFormat;
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -249,17 +250,17 @@ module.exports = function(RED) {
                     return;
                 }
                 const testBuffer = msg.payload.slice(0,8);
-                let testFormat = guessFormat(testBuffer);
-                if (!testFormat) {
+                node.testFormat = guessFormat(testBuffer);
+                if (!node.testFormat) {
                     if (!msg.hasOwnProperty("format")) {
                         node_status(["error","red","dot"],1500);
                         (done) ? done("msg with a buffer payload also needs to have a coresponding msg.format property") : node.error("msg with a buffer payload also needs to have a coresponding msg.format property");
                         node_status(["error starting conversion command","red","ring"],1500);
                         return;
                     }
-                    testFormat = msg.format;
+                    node.testFormat = msg.format;
                 }
-                node.inputFilePath = (node.shm) ? "/dev/shm/" + node.fileId + "input." + testFormat : "/tmp/" + node.fileId + "input." + testFormat;
+                node.inputFilePath = (node.shm) ? "/dev/shm/" + node.fileId + "input." + node.testFormat : "/tmp/" + node.fileId + "input." + node.testFormat;
                 try {
                     fs.writeFileSync(node.inputFilePath, msg.payload);
                 } catch (error) {
@@ -279,7 +280,7 @@ module.exports = function(RED) {
             
             node.argArr1 = [];
             if (node.debugOutput) { node.argArr1.push("-V3"); }
-            if (testFormat = "raw") {
+            if (node.testFormat === "raw") {
                 if (!msg.rate || !msg.encoding || !msg.bits || !msg.channels) {
                     (done) ? done("when converting raw audio you need to provide the following as properties of the incoming msg: the sample rate as msg.rate, the encoding as msg.encoding, the bits per sample as msg.bits and the channels of the audio as msg.channels") : node.error("when converting raw audio you need to provide the following as properties of the incoming msg: the sample rate as msg.rate, the encoding as msg.encoding, the bits per sample as msg.bits and the channels of the audio as msg.channels");
                     return;
