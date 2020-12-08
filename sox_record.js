@@ -277,9 +277,9 @@ module.exports = function(RED) {
         
         if (process.platform !== 'linux') {
             node.linux = false;
-            node.error("Error. This node only works on Linux with ALSA and Sox.");
-            node_status(["platform error","red","ring"]);
-            return;
+            //node.error("Error. This node only works on Linux with ALSA and Sox.");
+            //node_status(["platform error","red","ring"]);
+            //return;
         }
         
         node.fileId = node.id.replace(/\./g,"");
@@ -293,7 +293,7 @@ module.exports = function(RED) {
             node.manualPath += ".wav";
         }
         
-        if (!fs.existsSync('/dev/shm')) { node.shm = false; }
+        if (node.linux && !fs.existsSync('/dev/shm')) { node.shm = false; }
         
         (node.debugOutput) ? node.argArr.push("-t") : node.argArr.push("-q","-t");
         
@@ -325,9 +325,7 @@ module.exports = function(RED) {
         node.on('input', function(msg, send, done) {
             
             if (!node.linux) {
-                (done) ? done("Error. This node only works on Linux with ALSA and Sox.") : node.error("Error. This node only works on Linux with ALSA and Sox.");
-                node_status(["platform error","red","ring"]);
-                return;
+                node.warn("support for other platforms than linux is experimental.")
             }
             
             if (!node.checkPath) {
@@ -419,33 +417,37 @@ module.exports = function(RED) {
     RED.nodes.registerType("sox-record",SoxRecordNode);
     
     RED.httpAdmin.get("/soxRecord/devices", RED.auth.needsPermission('sox-record.read'), function(req,res) {
-        try {
-            exec('arecord -l', (error, stdout, stderr) => {
-                if (error) {
-                    res.json("error");
-                    console.log(error)
-                    return;
-                }
-                if (stderr) {
-                    res.json("error");
-                    console.log(stderr);
-                    return; 
-                }
-                if (stdout) {
-                    let deviceArr = stdout.split("\n");
-                    deviceArr = deviceArr.filter(line => line.match(/card/g));
-                    deviceArr = deviceArr.map(device => {
-                        let deviceObj = {};
-                        deviceObj.name = device.replace(/\s\[[^\[\]]*\]/g, "");
-                        deviceObj.number = device.match(/[0-9](?=\:)/g);
-                        return deviceObj;
-                    });
-                    res.json(deviceArr);
-                }
-            });
-        } catch (error) {
-            res.json("error");
-            console.log(error);
+        if (process.platform !== 'linux') { 
+            res.json("other");
+        } else {
+            try {
+                exec('arecord -l', (error, stdout, stderr) => {
+                    if (error) {
+                        res.json("error");
+                        console.log(error)
+                        return;
+                    }
+                    if (stderr) {
+                        res.json("error");
+                        console.log(stderr);
+                        return; 
+                    }
+                    if (stdout) {
+                        let deviceArr = stdout.split("\n");
+                        deviceArr = deviceArr.filter(line => line.match(/card/g));
+                        deviceArr = deviceArr.map(device => {
+                            let deviceObj = {};
+                            deviceObj.name = device.replace(/\s\[[^\[\]]*\]/g, "");
+                            deviceObj.number = device.match(/[0-9](?=\:)/g);
+                            return deviceObj;
+                        });
+                        res.json(deviceArr);
+                    }
+                });
+            } catch (error) {
+                res.json("error");
+                console.log(error);
+            }
         }
     });
     
