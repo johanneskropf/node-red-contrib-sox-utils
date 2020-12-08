@@ -28,6 +28,7 @@ module.exports = function(RED) {
         this.argArr = [];
         this.inputSourceRaw = config.inputSource;
         this.inputSource = "plughw:";
+        this.manualSource = config.manualSource;
         this.inputSourceArr = [];
         this.inputEncoding = config.inputEncoding;
         this.inputChannels = config.inputChannels;
@@ -300,14 +301,16 @@ module.exports = function(RED) {
             node.inputSource = ["raw","-e",node.inputEncoding,"-c",node.inputChannels,"-r",node.inputRate,"-b",node.inputBits,"-"];
             node.argArr = node.argArr.concat(node.inputSource);
             node.fromInput = true;
+        } else if (node.inputSourceRaw === 'default') {
+            node.argArr.pop();
+            node.argArr.push("-d");
+        } else if (node.inputSourceRaw === 'manualSource') {
+            node.argArr.pop();
+            let manualSourceInput = node.manualSource.trim().split(" ");
+            node.argArr = node.argArr.concat(manualSourceInput);
         } else {
-            if (node.inputSourceRaw === 'default') {
-                node.argArr.pop();
-                node.argArr.push("-d");
-            } else {
-                node.inputSource = node.inputSource += node.inputSourceRaw.toString();
-                node.argArr.push("alsa",node.inputSource);
-            }
+            node.inputSource = node.inputSource += node.inputSourceRaw.toString();
+            node.argArr.push("alsa",node.inputSource);
         }
         
         (node.outputFormat === "file") ?

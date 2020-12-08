@@ -19,6 +19,7 @@
             buttonStart: {value:"msg", required:true},
             inputs: {value:1},
             inputSource: {value:"default", required:true},
+            manualSource: {value:""},
             inputEncoding: {value:"signed-integer", required:false},
             inputChannels: {value:1, required:false},
             inputRate: {value:16000, required:false},
@@ -133,10 +134,14 @@
                     $("#inputFormatWrapper").show();
                     $("#node-input-buttonStart").val("msg");
                     $("#node-input-buttonStartRow").hide();
+                } else if (value == "manualSource") {
+                    $("#manualSourceWrapper").show();
+                    $("#inputFormatWrapper").hide();
                 } else {
                     $("#inputFormatWrapper").hide();
                     $("#node-input-buttonStartRow").show();
                 }
+                if (value != "manualSource") { $("#manualSourceWrapper").hide(); }
                 let value2 = $("#node-input-buttonStart").val();
                 if(value2 === "msg"){
                     node.inputs = 1;
@@ -194,7 +199,12 @@
             <select id="node-input-inputSource">
                 <option value="default">default device</option>
                 <option value="fromInput">record from a raw audio stream on the nodes input</option>
+                <option value="manualSource">define input device manually</option>
             </select>
+        </div>
+        <div class="form-row" id="manualSourceWrapper">
+            <label for="node-input-manualSource"><i class="icon-tag"></i>manual source input</label>
+            <input type="text" id="node-input-manualSource" value="" />
         </div>
         <div class="form-row" id="node-input-buttonStartRow">
             <label for="node-input-buttonStart"></i>start/stop</label>
