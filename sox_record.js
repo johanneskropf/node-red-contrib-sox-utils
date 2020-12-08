@@ -300,9 +300,14 @@ module.exports = function(RED) {
             node.inputSource = ["raw","-e",node.inputEncoding,"-c",node.inputChannels,"-r",node.inputRate,"-b",node.inputBits,"-"];
             node.argArr = node.argArr.concat(node.inputSource);
             node.fromInput = true;
-        } else  {
-            node.inputSource = (node.inputSourceRaw === 'default') ? node.inputSourceRaw : node.inputSource += node.inputSourceRaw.toString();
-            node.argArr.push("alsa",node.inputSource);
+        } else {
+            if (node.inputSourceRaw === 'default') {
+                node.argArr.pop();
+                node.argArr.push("-d");
+            } else {
+                node.inputSource = node.inputSource += node.inputSourceRaw.toString();
+                node.argArr.push("alsa",node.inputSource);
+            }
         }
         
         (node.outputFormat === "file") ?

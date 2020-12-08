@@ -70,7 +70,7 @@
             
             $.getJSON('soxRecord/devices',function(data) {
                 if (data === "error") {
-                    $("#error-wrapper").hide();
+                    //$("#error-wrapper").hide();
                     return;
                 }
                 $("#error").hide();
@@ -185,12 +185,12 @@
 
 <script type="text/html" data-template-name="sox-record">
     <div id="error">
-        <p>Something went wrong. The node couldnt retrieve any devices. The node only runs on Linux with ALSA. If any errors where logged you will find them in the syslog.</p>
+        <p>Something went wrong. The node couldnt retrieve any devices. The node only runs on Linux with ALSA. If any errors where logged you will find them in the syslog. You can still try and record from the default device or from a raw buffer chunk input.</p>
     </div>
     <div id="error-wrapper">
         <h4>Source</h4>
         <div class="form-row">
-            <label for="node-input-inputSource"></i>input device</label>
+            <label for="node-input-inputSource"></i>input source</label>
             <select id="node-input-inputSource">
                 <option value="default">default device</option>
                 <option value="fromInput">record from a raw audio stream on the nodes input</option>
