@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-sox-utils",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "a node-red wrapper for some of the sox commandline utils play and record functionality",
   "author": "Johannes Kropf",
   "license": "Apache-2.0",
