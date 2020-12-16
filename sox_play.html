@@ -17,6 +17,7 @@
         defaults: {
             name: {value:""},
             outputDevice: {value:'default', required:true},
+            manualOutput: {value:""},
             gain: {value:'0', required:true},
             startNew: {value:'skip', required:true},
             playStream: {value:false, required:true},
@@ -61,6 +62,15 @@
                     $('#node-input-outputDevice').append(`<option value="${device.number}">${device.name}</option>`);
                 });
                 $('#node-input-outputDevice').val(node.outputDevice);
+            });
+            
+            $("#node-input-outputDevice").on("change", function(){
+                let value = $("#node-input-outputDevice").val();
+                if (value === "manualOutput") {
+                    $("#manualOutputWrapper").show();
+                } else {
+                    $("#manualOutputWrapper").hide();
+                }
             });
         }
     });
@@ -111,8 +121,13 @@
         <div class="form-row">
             <label for="node-input-outputDevice"></i>output device</label>
             <select id="node-input-outputDevice">
-                <option value="default">default device</option> 
+                <option value="default">default device</option>
+                <option value="manualOutput">define output device manually</option>
             </select>
+        </div>
+        <div class="form-row" id="manualOutputWrapper">
+            <label for="node-input-manualOutput"><i class="icon-tag"></i>manual output input</label>
+            <input type="text" id="node-input-manualOutput" value="" />
         </div>
         <div class="form-row">
             <label for="node-input-gain"><i class="icon-tag"></i>gain in dB</label>

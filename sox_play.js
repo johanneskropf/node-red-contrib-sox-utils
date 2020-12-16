@@ -24,8 +24,9 @@ module.exports = function(RED) {
         this.statusTimer = false;
         this.statusTimer2 = false;
         this.outputDeviceRaw = config.outputDevice;
+        this.manualOutput = config.manualOutput;
         this.outputDevice = "plughw:";
-        this.gain = config.gain;
+        this.gain = config.gain + "dB";
         this.debugOutput = config.debugOutput;
         this.argArr = [];
         this.startNew = config.startNew;
@@ -100,10 +101,13 @@ module.exports = function(RED) {
             node.argArr.push(queueItem.trim());
             if (node.outputDeviceRaw === "default") {
                 node.argArr.push("-d")
+            } else if (node.outputDeviceRaw === "manualOutput") {
+                let manualOutputDevice = node.manualOutput.trim().split(" ");
+                node.argArr = node.argArr.concat(manualOutputDevice);
             } else {
                 node.argArr.push('-t','alsa',node.outputDevice);
             }
-            node.argArr.push('vol',node.gain,'dB');
+            node.argArr.push('vol',node.gain);
             spawnPlay();
             if (node.queue.lenght === 0) { node.addN = 0; }
             return;
@@ -111,6 +115,7 @@ module.exports = function(RED) {
         }
         
         function spawnPlay(){
+            node.warn(node.argArr);
             
             try{
                 node.soxPlay = spawn("sox",node.argArr);
@@ -165,10 +170,13 @@ module.exports = function(RED) {
             node.argArr = ["-t","raw","-e",node.inputEncoding,"-c",node.inputChannels,"-r",node.inputRate,"-b",node.inputBits,"-"];
             if (node.outputDeviceRaw === "default") {
                 node.argArr.push("-d")
+            } else if (node.outputDeviceRaw === "manualOutput") {
+                let manualOutputDevice = node.manualOutput.trim().split(" ");
+                node.argArr = node.argArr.concat(manualOutputDevice);
             } else {
                 node.argArr.push('-t','alsa',node.outputDevice);
             }
-            node.argArr.push('vol',node.gain,'dB');
+            node.argArr.push('vol',node.gain);
             try{
                 node.soxPlayStream = spawn("sox",node.argArr);
             } 
@@ -324,10 +332,13 @@ module.exports = function(RED) {
                     node.argArr.push(msg.payload.trim());
                     if (node.outputDeviceRaw === "default") {
                         node.argArr.push("-d")
+                    } else if (node.outputDeviceRaw === "manualOutput") {
+                        let manualOutputDevice = node.manualOutput.trim().split(" ");
+                        node.argArr = node.argArr.concat(manualOutputDevice);
                     } else {
                         node.argArr.push('-t','alsa',node.outputDevice);
                     }
-                    node.argArr.push('vol',node.gain,'dB');
+                    node.argArr.push('vol',node.gain);
                     spawnPlay();
                 } else if (!node.soxPlay && Buffer.isBuffer(msg.payload)) {
                     try {
@@ -345,10 +356,13 @@ module.exports = function(RED) {
                         node.argArr.push(msg.payload.trim());
                         if (node.outputDeviceRaw === "default") {
                             node.argArr.push("-d")
+                        } else if (node.outputDeviceRaw === "manualOutput") {
+                            let manualOutputDevice = node.manualOutput.trim().split(" ");
+                            node.argArr = node.argArr.concat(manualOutputDevice);
                         } else {
                             node.argArr.push('-t','alsa',node.outputDevice);
                         }
-                        node.argArr.push('vol',node.gain,'dB');
+                        node.argArr.push('vol',node.gain);
                     } else if (Buffer.isBuffer(msg.payload)) {
                         try {
                             fs.writeFileSync(node.filePath, msg.payload);
@@ -356,7 +370,16 @@ module.exports = function(RED) {
                             (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
                             return;
                         }
-                        node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'vol',node.gain,'dB');
+                        node.argArr.push(node.filePath);
+                        if (node.outputDeviceRaw === "default") {
+                            node.argArr.push("-d")
+                        } else if (node.outputDeviceRaw === "manualOutput") {
+                            let manualOutputDevice = node.manualOutput.trim().split(" ");
+                            node.argArr = node.argArr.concat(manualOutputDevice);
+                        } else {
+                            node.argArr.push('-t','alsa',node.outputDevice);
+                        }
+                        node.argArr.push('vol',node.gain);
                     }
                     node.newPayload = msg.payload;
                     node.killNew = true;
