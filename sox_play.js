@@ -347,7 +347,7 @@ module.exports = function(RED) {
                         (done) ? done("couldnt write tmp file") : node.error("couldnt write tmp file");
                         return;
                     }
-                    node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'vol',node.gain,"dB");
+                    node.argArr.push(node.filePath,'-t','alsa',node.outputDevice,'vol',node.gain);
                     spawnPlay();
                 } else if (node.soxPlay && node.startNew === 'start') {
                     node.argArr = [];
