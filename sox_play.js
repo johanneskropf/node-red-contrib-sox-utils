@@ -115,7 +115,6 @@ module.exports = function(RED) {
         }
         
         function spawnPlay(){
-            node.warn(node.argArr);
             
             try{
                 node.soxPlay = spawn("sox",node.argArr);
