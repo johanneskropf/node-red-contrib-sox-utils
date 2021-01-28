@@ -204,7 +204,7 @@ module.exports = function(RED) {
                         msg.format = "raw";
                         msg.encoding = node.encoding;
                         msg.channels = node.channels;
-                        msg.rate = msg.rate;
+                        msg.rate = node.rate;
                         msg.bits = node.bits;
                         (send) ? send([msg,null]) : node.send([msg,null]);
                         break;
@@ -270,7 +270,7 @@ module.exports = function(RED) {
             node.inputTimeout = setTimeout(() => {
                 node.soxRecord.stdin.destroy();
                 node.inputTimeout = false;
-            }, 1000);
+            }, 3000);
         }
         
         node_status();
