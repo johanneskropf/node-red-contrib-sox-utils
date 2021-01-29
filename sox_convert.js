@@ -56,6 +56,7 @@ module.exports = function(RED) {
         this.checkPath = true;
         this.linux = true;
         this.testFormat;
+        this.altPath = false;
         var node = this;
         
         function node_status(state1 = [], timeout = 0, state2 = []){
@@ -139,11 +140,12 @@ module.exports = function(RED) {
                     }
                 } else {
                     msg.format = node.conversionType;
-                    msg.payload = node.filePath;
+                    msg.payload = (node.altPath) ? node.altPath : node.filePath;
                 }
                 (send) ? send([msg,null]) : node.send([msg,null]);
                 (send) ? send([null,{payload:"complete"}]) : node.send([null,{payload:"complete"}]);
                 node_status(["finished","green","dot"],1500);
+                node.altPath = false;
                 delete node.soxConvert;
                 if (done) { done(); }
                 return;
@@ -239,6 +241,20 @@ module.exports = function(RED) {
             if (typeof msg.payload === "string" && msg.payload.length === 0) {
                 (done) ? done("String input was empty") : node.error("String input was empty");
                 return;
+            }
+            
+            if (msg.hasOwnProperty("filename")) {
+                if (typeof msg.filename !== "string") {
+                    node.warn("ignoring msg.filename as it is not a string, msg.filename should be a legal path to a file in string format");
+                } else if (node.outputToFile !== "file") {
+                    node.warn("ignoring msg.filename as it can only overwrite destination if in file output mode");
+                } else if (!msg.filename.match(node.conversionType)) {
+                    node.warn("ignoring msg.filename as extension of msg.filepath has to match conversion type");
+                } else {
+                    let swap = node.argArr2.length - 1;
+                    node.argArr2.splice(swap, 1, msg.filename);
+                    node.altPath = msg.filename;
+                }
             }
             
             node.inputFilePath = "";

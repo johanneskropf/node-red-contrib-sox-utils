@@ -132,6 +132,24 @@ module.exports = function(RED) {
         node.spawnRecord = function(msg, send, done) {
             
             let msg2 = {};
+            let altPath = false;
+            
+            if (msg.hasOwnProperty("filename")) {
+                if (typeof msg.filename !== "string") {
+                    node.warn("ignoring msg.filename as it is not a string, msg.filename should be a legal path to a file in string format");
+                } else if (node.outputFormat !== "file") {
+                    node.warn("ignoring msg.filename as it can only overwrite destination if in wav output mode");
+                } else {
+                    let swap = 0;
+                    if (node.inputSourceRaw === "fromInput") {
+                        swap = node.argArr.indexOf("-b", 11) + 2;
+                    } else {
+                        swap = node.argArr.indexOf("-b") + 2;
+                    }
+                    node.argArr.splice(swap, 1, msg.filename);
+                    altPath = msg.filename;
+                }
+            }
             
             try{
                 if (msg.hasOwnProperty("options")) {
@@ -210,7 +228,7 @@ module.exports = function(RED) {
                         break;
                         
                     case "file":
-                        msg.payload = node.manualPath;
+                        msg.payload = (altPath) ? altPath : node.manualPath;
                         (send) ? send([msg,null]) : node.send([msg,null]);
                         break;
                 }
