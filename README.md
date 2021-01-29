@@ -76,6 +76,10 @@ As the nodes try to do as much as possible in memory by using buffers or writing
 
 Both the record and convert node support adding additional effects that will be tagged on the sox command to execute. You can pass those additional arguments as a string in `msg.options` which contains the effects in the same format as they would be used in the sox command line utility. For example you could use `highpass 200 lowpass 8000` in `msg.options` to add a high and lowpass filter. The record node needs to be in the *control with `msg.payload`* mode to be able to pass in the additional arguments with the start msg. Keep in mind that not all effects might work. To debug use the detailed debug output to the second output option.
 
+## Setting the output file with `msg.filename`
+
+You can use `msg.filename` in the input `msg` for both the record and convert node to dynamically set the name of the file to be written. This will overwrite the path set in the nodes config for this input msg. It will only work if the node is in output to file beforehand. The string in `msg.filename` has to be a full path to a writable location.
+
 ## Beta recording from a stream of raw audio audio chunks and listening to it
 
 ### Recording from a stream of raw audio chunks
