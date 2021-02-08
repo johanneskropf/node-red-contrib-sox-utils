@@ -33,7 +33,7 @@
             lowpass: {value:8000, required:true},
             showDuration: {value:false, required:true},
             durationType: {value:"forever", required:true},
-            durationLength: {value:0, required:true},
+            durationLength: {value:"0", required:true},
             silenceDetection: {value:"nothing", required:true},
             silenceDuration: {value:"2.0", required:true},
             silenceThreshold: {value:"2.0", required:true},
@@ -287,13 +287,13 @@
             <div class="form-row">
                 <label for="node-input-durationType"><i class="icon-tag"></i>record time</label>
                 <select id="node-input-durationType">
-                    <option value="forever">record until a stop msg is send</option> 
+                    <option value="forever">record until a stop msg is sent</option> 
                     <option value="limited">record for specified amount of seconds</option>
                 </select>
             </div>
             <div id="durationLengthWrapper" class="form-row">
                 <label for="node-input-durationLength"><i class="icon-tag"></i>seconds</label>
-                <input type="number" id="node-input-durationLength" value="0" />
+                <input type="text" id="node-input-durationLength" value="0.0" />
             </div>
             <div class="form-row">
                 <label for="node-input-silenceDetection"><i class="icon-tag"></i>on silence</label>
