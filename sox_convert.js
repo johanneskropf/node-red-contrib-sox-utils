@@ -167,7 +167,8 @@ module.exports = function(RED) {
             "/dev/shm/" :
             "/tmp/";
         } else if (process.platform === "darwin") {
-            execSync('echo $TMPDIR', (error, stdout, stderr) => {
+            node.warn("im a mac")
+            exec('echo $TMPDIR', (error, stdout, stderr) => {
                 if (error) {
                     node.error(`couldnt set tmpdir: ${error}`);
                     return;
