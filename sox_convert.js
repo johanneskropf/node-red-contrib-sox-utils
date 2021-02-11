@@ -331,9 +331,12 @@ module.exports = function(RED) {
             
             if (node.system) {
                 const checkDir = node.partialPath;
-                const files = fs.readdirSync(checkDir)
+                try {
+                    const files = fs.readdirSync(checkDir)
+                } catch (error) {
+                    node.error(`clean up error: ${error}`);
+                }
                 files.forEach(file => {
-                    node.warn(file);
                     if (file.match(node.fileId)) {
                         try {
                             fs.unlinkSync(checkDir + file);
