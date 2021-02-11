@@ -108,7 +108,6 @@ module.exports = function(RED) {
         function spawnConvert(msg, send, done){
         
             let msg2 = {};
-            node.warn(node.argArr);
             
             try{
                 node.soxConvert = spawn("sox",node.argArr);
@@ -168,7 +167,7 @@ module.exports = function(RED) {
             "/tmp/";
         } else if (process.platform === "darwin") {
             node.warn("im a mac")
-            node.partialPath = execSync('echo $TMPDIR');
+            node.partialPath = execSync('echo $TMPDIR').trim();
         } else {
             node.system = false;
         }
