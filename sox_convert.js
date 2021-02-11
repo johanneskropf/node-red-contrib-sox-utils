@@ -331,17 +331,16 @@ module.exports = function(RED) {
             
             if (node.system) {
                 const checkDir = node.partialPath;
-                fs.readdir(checkDir, (err,files) => {
-                    if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
-                    files.forEach(file => {
-                        if (file.match(node.fileId)) {
-                            try {
-                                fs.unlinkSync(checkDir + file);
-                            } catch (error) {
-                                node.error("couldnt delete leftover " + file);
-                            }
+                const files = fs.readdirSync(checkDir)
+                files.forEach(file => {
+                    node.warn(file);
+                    if (file.match(node.fileId)) {
+                        try {
+                            fs.unlinkSync(checkDir + file);
+                        } catch (error) {
+                            node.error("couldnt delete leftover " + file);
                         }
-                    });
+                    }
                     return;
                 });
             }
