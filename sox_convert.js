@@ -168,7 +168,7 @@ module.exports = function(RED) {
         } else if (process.platform === "darwin") {
             node.warn("im a mac")
             node.partialPath = execSync('echo $TMPDIR');
-            node.partialPath = node.partialPath.trim();
+            node.partialPath = String(node.partialPath).trim();
         } else {
             node.system = false;
         }
