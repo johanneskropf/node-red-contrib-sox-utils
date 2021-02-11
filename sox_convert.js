@@ -167,7 +167,8 @@ module.exports = function(RED) {
             "/tmp/";
         } else if (process.platform === "darwin") {
             node.warn("im a mac")
-            node.partialPath = execSync('echo $TMPDIR').trim();
+            node.partialPath = execSync('echo $TMPDIR');
+            node.partialPath = node.partialPath.trim();
         } else {
             node.system = false;
         }
