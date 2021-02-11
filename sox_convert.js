@@ -168,20 +168,7 @@ module.exports = function(RED) {
             "/tmp/";
         } else if (process.platform === "darwin") {
             node.warn("im a mac")
-            execSync('echo $TMPDIR', (error, stdout, stderr) => {
-                if (error) {
-                    node.error(`couldnt set tmpdir: ${error}`);
-                    return;
-                }
-                if (stderr) {
-                    node.error(`couldnt set tmpdir: ${stderr}`);
-                    return;
-                }
-                if (stdout) {
-                    node.partialPath = stdout.trim();
-                    node.warn(node.partialPath);
-                }
-            });
+            node.partialPath = execSync('echo $TMPDIR');
         } else {
             node.system = false;
         }
