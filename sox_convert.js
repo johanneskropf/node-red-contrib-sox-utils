@@ -108,6 +108,7 @@ module.exports = function(RED) {
         function spawnConvert(msg, send, done){
         
             let msg2 = {};
+            node.warn(node.argArr);
             
             try{
                 node.soxConvert = spawn("sox",node.argArr);
@@ -177,6 +178,7 @@ module.exports = function(RED) {
                 }
                 if (stdout) {
                     node.partialPath = stdout.trim();
+                    node.warn(node.partialPath);
                 }
             });
         } else {
