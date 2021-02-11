@@ -329,7 +329,7 @@ module.exports = function(RED) {
         
             node_status();
             
-            if (node.linux) {
+            if (node.system) {
                 const checkDir = node.partialPath;
                 fs.readdir(checkDir, (err,files) => {
                     if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
