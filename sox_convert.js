@@ -17,6 +17,7 @@ module.exports = function(RED) {
 
     const { spawn } = require("child_process");
     const { exec } = require("child_process");
+    const { execSync } = require("child_process");
     const fs = require("fs");
     
     function SoxConvertNode(config) {
