@@ -52,9 +52,9 @@ module.exports = function(RED) {
         this.debugOutput = config.debugOutput;
         this.outputToFile = config.outputToFile;
         this.manualPath = config.manualPath;
-        this.shm = true;
+        this.partialPath = "";
         this.checkPath = true;
-        this.linux = true;
+        this.system = true;
         this.testFormat;
         this.altPath = false;
         var node = this;
@@ -160,16 +160,29 @@ module.exports = function(RED) {
         
         node_status();
         
-        if (process.platform !== 'linux') {
-            node.linux = false;
-            node.error("Error. This node only works on Linux with ALSA and Sox.");
-            node_status(["platform error","red","ring"]);
-            return;
+        if (process.platform === 'linux') {
+            node.partialPath = (fs.existsSync('/dev/shm')) ?
+            "/dev/shm/" :
+            "/tmp/";
+        } else if (process.platform === "darwin") {
+            execSync('echo $TMPDIR', (error, stdout, stderr) => {
+                if (error) {
+                    node.error(`couldnt set tmpdir: ${error}`);
+                    return;
+                }
+                if (stderr) {
+                    node.error(`couldnt set tmpdir: ${stderr}`);
+                    return;
+                }
+                if (stdout) {
+                    node.partialPath = stdout.trim();
+                }
+            });
+        } else {
+            node.system = false;
         }
         
         node.fileId = node.id.replace(/\./g,"");
-        
-        if (!fs.existsSync('/dev/shm')) { node.shm = false; }
         
         if (node.outputToFile === "file" && !node.manualPath) {
             node.error("did you forget to enter a file path? bing bing");
@@ -178,7 +191,7 @@ module.exports = function(RED) {
         } else if (node.outputToFile === "file") {
             node.filePath = node.manualPath;
         } else {
-            node.filePath = (node.shm) ? "/dev/shm/" + node.fileId : "/tmp/" + node.fileId;
+            node.filePath = node.partialPath + node.fileId;
         }
         
         switch (node.conversionType) {
@@ -221,7 +234,7 @@ module.exports = function(RED) {
         
         node.on('input', function(msg, send, done) {
             
-            if (!node.linux) {
+            if (!node.system) {
                 (done) ? done("Error. This node only works on Linux with ALSA and Sox.") : node.error("Error. This node only works on Linux with ALSA and Sox.");
                 node_status(["platform error","red","ring"]);
                 return;
@@ -276,7 +289,7 @@ module.exports = function(RED) {
                     }
                     node.testFormat = msg.format;
                 }
-                node.inputFilePath = (node.shm) ? "/dev/shm/" + node.fileId + "input." + node.testFormat : "/tmp/" + node.fileId + "input." + node.testFormat;
+                node.inputFilePath = node.partialPath + node.fileId + "input." + node.testFormat;
                 try {
                     fs.writeFileSync(node.inputFilePath, msg.payload);
                 } catch (error) {
@@ -326,7 +339,7 @@ module.exports = function(RED) {
             node_status();
             
             if (node.linux) {
-                const checkDir = (node.shm) ? "/dev/shm/" : "/tmp/";
+                const checkDir = node.partialPath;
                 fs.readdir(checkDir, (err,files) => {
                     if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
                     files.forEach(file => {

@@ -475,10 +475,7 @@ module.exports = function(RED) {
         
         if (node != null) {
             if (!node.linux) {
-                node.error("Error. This node only works on Linux with ALSA and Sox.");
-                node_status(["platform error","red","ring"]);
-                res.sendStatus(500);
-                return;
+                node.warn("Warning. This node is only tested on Linux with ALSA and Sox.");
             }
             try {
                 if(!node.soxRecord){
