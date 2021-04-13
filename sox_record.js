@@ -50,9 +50,9 @@ module.exports = function(RED) {
         this.debugOutput = config.debugOutput;
         this.fileId = "";
         this.filePath = "";
-        this.shm = true;
+        this.partialPath = "";
         this.checkPath = true;
-        this.linux = true;
+        this.system = true;
         this.fromInput = false;
         this.notNow = false;
         this.inputTimeout = false;
@@ -200,11 +200,8 @@ module.exports = function(RED) {
                 
                 switch (node.outputFormat) {
                     case "wav":
-                        if (node.shm) {
-                            node.filePath = "/dev/shm/tmp" + node.fileId + ".raw";
-                        } else {
-                            node.filePath = "/tmp/tmp" + node.fileId + ".raw";
-                        }
+                        node.filePath = node.partialPath + node.fileId + ".raw";
+                        
                         try {
                             fs.writeFileSync(node.filePath,node.outputBuffer);
                         }
@@ -293,11 +290,16 @@ module.exports = function(RED) {
         
         node_status();
         
-        if (process.platform !== 'linux') {
-            node.linux = false;
-            //node.error("Error. This node only works on Linux with ALSA and Sox.");
-            //node_status(["platform error","red","ring"]);
-            //return;
+        if (process.platform === 'linux') {
+            node.partialPath = (fs.existsSync('/dev/shm')) ?
+            "/dev/shm/" :
+            "/tmp/";
+        } else if (process.platform === "darwin") {
+            node.warn("im a mac")
+            node.partialPath = execSync('echo $TMPDIR');
+            node.partialPath = String(node.partialPath).trim();
+        } else {
+            node.system = false;
         }
         
         node.fileId = node.id.replace(/\./g,"");
@@ -310,8 +312,6 @@ module.exports = function(RED) {
             node.manualPath.trim();
             node.manualPath += ".wav";
         }
-        
-        if (node.linux && !fs.existsSync('/dev/shm')) { node.shm = false; }
         
         (node.debugOutput) ? node.argArr.push("-t") : node.argArr.push("-q","-t");
         
@@ -342,8 +342,10 @@ module.exports = function(RED) {
         
         node.on('input', function(msg, send, done) {
             
-            if (!node.linux) {
-                node.warn("support for other platforms than linux is experimental.")
+            if (!node.system) {
+                (done) ? done("Error. This node only works on Linux with ALSA and Sox.") : node.error("Error. This node only works on Linux with ALSA and Sox.");
+                node_status(["platform error","red","ring"]);
+                return;
             }
             
             if (!node.checkPath) {
@@ -408,19 +410,21 @@ module.exports = function(RED) {
         
             node_status();
             
-            if (node.linux) {
-                const checkDir = (node.shm) ? "/dev/shm/" : "/tmp/";
-                fs.readdir(checkDir, (err,files) => {
-                    if (err) { node.error("couldnt check for leftovers in " + checkDir); return; }
-                    files.forEach(file => {
-                        if (file.match(node.fileId)) {
-                            try {
-                                fs.unlinkSync(checkDir + file);
-                            } catch (error) {
-                                node.error("couldnt delete leftover " + file);
-                            }
+            if (node.system) {
+                const checkDir = node.partialPath;
+                try {
+                    const files = fs.readdirSync(checkDir)
+                } catch (error) {
+                    node.error(`clean up error: ${error}`);
+                }
+                files.forEach(file => {
+                    if (file.match(node.fileId)) {
+                        try {
+                            fs.unlinkSync(checkDir + file);
+                        } catch (error) {
+                            node.error("couldnt delete leftover " + file);
                         }
-                    });
+                    }
                     return;
                 });
             }
@@ -474,7 +478,7 @@ module.exports = function(RED) {
         var node = RED.nodes.getNode(req.params.id)
         
         if (node != null) {
-            if (!node.linux) {
+            if (!node.system) {
                 node.warn("Warning. This node is only tested on Linux with ALSA and Sox.");
             }
             try {

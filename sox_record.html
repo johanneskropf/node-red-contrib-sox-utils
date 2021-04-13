@@ -71,11 +71,9 @@
             
             $.getJSON('soxRecord/devices',function(data) {
                 if (data === "other") {
-                    $("#node-input-outputFormat option[value='wav']").remove();
                     $("#error").hide();
                     return;
                 } else if (data === "error") {
-                    $("#notLinux").hide();
                     return;
                 }
                 $("#notLinux").hide();
