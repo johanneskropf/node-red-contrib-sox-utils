@@ -4,12 +4,16 @@
 !!!this is very much wip, so use with care!!!
 ```
 
-a simple node-red wrapper around some of the record, play and convert functionality of the [sox commandline utility](http://sox.sourceforge.net/) on **linux**.
+a simple node-red wrapper around some of the record, play and convert functionality of the [sox commandline utility](http://sox.sourceforge.net/) on **linux**. (The record and convert node should also work on mac os but some features may be missing)
 
 # Prerequisites
 
-This node is made to work with the [sox commandline utility](http://sox.sourceforge.net/) and [the Advanced Linux Sound Architecture (ALSA)](https://alsa-project.org/wiki/Main_Page) on linux. To use it you will have to install sox. This can be done with the command `sudo apt-get install sox` from the commandline of the machine that node-red is running on.
-Once you have sox installed you can install the node by running the following npm command in your Node-RED user directory (typically ~/.node-red):
+This set of nodes is mostly made to work with the [sox commandline utility](http://sox.sourceforge.net/) and [the Advanced Linux Sound Architecture (ALSA)](https://alsa-project.org/wiki/Main_Page) on **linux**. To use it you will have to install sox. This can on most distributions be done with the command `sudo apt-get install sox` from the commandline of the machine that node-red is running on. If you have a different package manager than apt you will have to use that one to install sox.
+Once you have sox installed you can install the node from the pallete manager or by running the following npm command in your Node-RED user directory (typically ~/.node-red):
+```
+npm install node-red-contrib-sox-utils
+```
+or you can install directly from the repository with:
 ```
 npm install johanneskropf/node-red-contrib-sox-utils
 ```
