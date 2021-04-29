@@ -40,6 +40,7 @@ module.exports = function(RED) {
         this.rate = config.rate;
         this.bits = config.bits;
         this.gain = config.gain;
+        this.buffer = config.buffer;
         this.durationType = config.durationType;
         this.durationLength = config.durationLength;
         this.silenceDetection = config.silenceDetection;
@@ -313,6 +314,8 @@ module.exports = function(RED) {
             node.manualPath += ".wav";
         }
         
+        node.argArr.push("--buffer",node.buffer);
+        
         (node.debugOutput) ? node.argArr.push("-t") : node.argArr.push("-q","-t");
         
         if (node.inputSourceRaw === "fromInput") {
@@ -407,6 +410,10 @@ module.exports = function(RED) {
         });
         
         node.on("close",function() {
+            
+            try {
+                node.soxRecord.kill();
+            } catch (error) {}
         
             node_status();
             
@@ -427,10 +434,6 @@ module.exports = function(RED) {
                     }
                     return;
                 });
-            }
-            
-            if(node.soxRecord) {
-                node.soxRecord.kill();
             }
             
         });

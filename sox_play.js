@@ -114,7 +114,7 @@ module.exports = function(RED) {
             
         }
         
-        function spawnPlay(){
+        function spawnPlay(){ 
             
             try{
                 node.soxPlay = spawn("sox",node.argArr);
@@ -414,7 +414,11 @@ module.exports = function(RED) {
         });
         
         node.on("close",function() {
-        
+            
+            try {
+                node.soxPlay.kill();
+            } catch (error) {}
+            
             node_status();
             
             node.queue = [];
@@ -434,10 +438,6 @@ module.exports = function(RED) {
                     });
                     return;
                 });
-            }
-            
-            if(node.soxPlay) {
-                node.soxPlay.kill();     
             }
             
         });
