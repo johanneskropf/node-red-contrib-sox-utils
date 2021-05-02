@@ -30,7 +30,7 @@
             rate: {value:16000, required:true},
             bits: {value:16, required:true},
             gain: {value:"0", required:true},
-            lowpass: {value:8000, required:true},
+            buffer: {value:"4096", required:true},
             showDuration: {value:false, required:true},
             durationType: {value:"forever", required:true},
             durationLength: {value:"0", required:true},
@@ -274,6 +274,10 @@
         <div class="form-row">
             <label for="node-input-gain"><i class="icon-tag"></i>gain in dB</label>
             <input type="text" id="node-input-gain" value="0" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-buffer"><i class="icon-tag"></i>processing buffer</label>
+            <input type="text" id="node-input-buffer" value="4096" />
         </div>
         <h4>Recording Duration</h4>
         <div class="form-row">
