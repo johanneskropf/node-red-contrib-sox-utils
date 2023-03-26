@@ -47,6 +47,9 @@ module.exports = function(RED) {
         this.oggCompression = config.oggCompression;
         this.oggChannels = config.oggChannels;
         this.oggRate = config.oggRate;
+        this.ulawMore = config.ulawMore;
+        this.ulawChannels = config.ulawChannels;
+        this.ulawRate = config.ulawRate;
         this.fileId = "";
         this.filePath = "";
         this.inputFilePath = "";
@@ -219,6 +222,15 @@ module.exports = function(RED) {
                     node.argArr2 = ["-c",node.oggChannels,"-r",node.oggRate,"-C",node.oggCompression,node.filePath];
                 } else {
                     node.argArr2 = ["-C",node.oggCompression,node.filePath];
+                }
+                break;
+
+            case "ulaw":
+                node.filePath += ".ulaw";
+                if (node.ulawMore) {
+                    node.argArr2 = ["-c",node.ulawChannels,"-r",node.ulawRate,"-t","ul",node.filePath];
+                } else {
+                    node.argArr2 = ["-t","ul",node.filePath];
                 }
                 break;
         }
