@@ -38,6 +38,9 @@
             oggCompression: {value:3, required:true},
             oggChannels: {value:2, required:true},
             oggRate: {value:44100, required:true},
+            ulawMore: {value:false, required:true},
+            ulawChannels: {value:1, required:true},
+            ulawRate: {value:8000, required:true},
             debugOutput: {value:false, required:true}
         },
         inputs:1,
@@ -67,21 +70,32 @@
                     $("#mp3Wrapper").hide();
                     $("#flacWrapper").hide();
                     $("#oggWrapper").hide();
+                    $("#ulawWrapper").hide();
                 } else if (typeVar == "flac") {
                     $("#outputExt").text(".flac");
                     $("#flacWrapper").show();
                     $("#wavWrapper").hide();
                     $("#mp3Wrapper").hide();
                     $("#oggWrapper").hide();
+                    $("#ulawWrapper").hide();
                 } else if (typeVar == "mp3") {
                     $("#outputExt").text(".mp3");
                     $("#mp3Wrapper").show();
                     $("#wavWrapper").hide();
                     $("#flacWrapper").hide();
                     $("#oggWrapper").hide();
+                    $("#ulawWrapper").hide();
                 } else if (typeVar == "ogg") {
                     $("#outputExt").text(".ogg");
                     $("#oggWrapper").show();
+                    $("#wavWrapper").hide();
+                    $("#flacWrapper").hide();
+                    $("#mp3Wrapper").hide();
+                    $("#ulawWrapper").hide();
+                } else if (typeVar == "ulaw") {
+                    $("#outputExt").text(".ulaw");
+                    $("#ulawWrapper").show();
+                    $("#oggWrapper").hide();
                     $("#wavWrapper").hide();
                     $("#flacWrapper").hide();
                     $("#mp3Wrapper").hide();
@@ -128,6 +142,14 @@
                     $("#oggWrapperMore").show();
                 }
             });
+
+            $("#node-input-ulawMore").on("change", function(){
+                if(!$("#node-input-ulawMore").prop("checked")){
+                    $("#ulawWrapperMore").hide();
+                } else {
+                    $("#ulawWrapperMore").show();
+                }
+            });
         }
     });
 </script>
@@ -140,6 +162,7 @@
             <option value="flac">flac</option> 
             <option value="mp3">mp3</option>
             <option value="ogg">ogg</option>
+            <option value="ulaw">ulaw</option>
         </select>
     </div>
     <div class="form-row">
@@ -267,6 +290,24 @@
             </div>
             <br>
         </div>
+    </div>
+    <div id="ulawWrapper">
+        <div class="form-row">
+            <label for="node-input-ulawMore">advanced</i></label>
+            <input type="checkbox" id="node-input-ulawMore" style="display:inline-block; width: auto; vertical-align:baseline;" value="false">
+            <label for="node-input-ulawMore" style="width: 70%;">show more conversion options</label>
+        </div>
+        <div id="ulawWrapperMore">
+            <div class="form-row">
+                <label for="node-input-ulawChannels"><i class="icon-tag"></i>channels</label>
+                <input type="number" id="node-input-ulawChannels" value="1" />
+            </div>
+            <div class="form-row">
+                <label for="node-input-ulawRate"><i class="icon-tag"></i>sample-rate</label>
+                <input type="number" id="node-input-ulawRate" value="8000" />
+            </div>
+            <br>
+        </div> 
     </div>
     <div class="form-row">
         <label for="node-input-debugOutput"></i>debug</label>
